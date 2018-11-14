@@ -1,0 +1,8 @@
+CMP A,B         signed          unsigned
+-------         ------          --------
+A >  B           BLT             BLO/BCS
+A >= B           BLE             BLS
+A == B           BEQ             BEQ
+A != B           BNE             BNE
+A <  B           BGT             BHI
+A <= B           BGE             BHS/BCC
