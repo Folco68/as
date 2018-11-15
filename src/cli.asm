@@ -1,3 +1,5 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 ;==================================================================================================
 ;
 ;	ParseCommands
@@ -93,7 +95,7 @@ DisplayVersion:
 	movea.l	(sp)+,fp			; Restore frame pointer
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
-	
+
 
 ;==================================================================================================
 ;	Specify a config file
@@ -105,7 +107,7 @@ SetConfigFile:
 	;------------------------------------------------------------------------------------------
 	pea	(fp)
 	movea.l	a0,fp
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Get the next argument if one exists
 	;------------------------------------------------------------------------------------------
@@ -113,16 +115,16 @@ SetConfigFile:
 	jsr	GET_NEXT_ARG(fp)
 	move.l	a0,d0				; Is an arg available?
 	beq	ErrorNoArgForConfig		; No...
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Save the pointer of the filename, without additional check
 	;------------------------------------------------------------------------------------------
-	move.l	a0,CUSTOM_CONFIG_FILENAME_PTR(fp)	
+	move.l	a0,CUSTOM_CONFIG_FILENAME_PTR(fp)
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 \Error:	movea.l	(sp)+,fp			; Restore org frame pointer
 	rts
 
-	
+
 ;==================================================================================================
 ;	Enable/Disable the swap
 ;==================================================================================================
@@ -133,13 +135,13 @@ EnableSwap:
 	;------------------------------------------------------------------------------------------
 	pea	(fp)
 	movea.l	a0,fp
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Set the flag according to the sign
 	;------------------------------------------------------------------------------------------
 	moveq.l	#BIT_SWAP,d1			; Flag rank
 	bsr	flags::SetFlag			; The sign is already in d0
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Print a warning message if the command enables the swap
 	;------------------------------------------------------------------------------------------
@@ -156,8 +158,8 @@ EnableSwap:
 	movea.l	(sp)+,fp
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
-	
-	
+
+
 ;==================================================================================================
 ;	Print a short help
 ;==================================================================================================
@@ -168,14 +170,14 @@ DisplayHelp:
 	addq.l	#4,sp
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
-	
-	
+
+
 ;==================================================================================================
 ;	Display the default compilation flags of as
 ;==================================================================================================
 
 DisplayFlags:
-	
+
 
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts

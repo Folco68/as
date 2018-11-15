@@ -1,3 +1,5 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 ;==================================================================================================
 ;	PedroM's custom header, allowing libc calls through LibsCall/LibsExec;
 ;	See Library.asm of PedroM for more details

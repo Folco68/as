@@ -1,3 +1,5 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 ;==================================================================================================
 ;
 ;	ParseConfigFile
@@ -23,7 +25,7 @@ config::ParseConfigFile
 	;------------------------------------------------------------------------------------------
 	move.l	CUSTOM_CONFIG_FILENAME_PTR(fp),d0		; Check if we have to use the default filename
 	bne.s	\CustomConfigFile
-	
+
 	;------------------------------------------------------------------------------------------
 	;	No custom filename specified, create the default one
 	;------------------------------------------------------------------------------------------
@@ -45,23 +47,23 @@ config::ParseConfigFile
 	;	The name has been created
 	;------------------------------------------------------------------------------------------
 \CustomConfigFile:
-	movea.l	d0,a0	
+	movea.l	d0,a0
 	jsr	GET_FILE_PTR(fp)			; Get a pointer to the file content
 	move.l	a0,d1
 	bne.s	\FileFound
-		
+
 	;------------------------------------------------------------------------------------------
 	;	No file found
 	;------------------------------------------------------------------------------------------
 	tst.l	CUSTOM_CONFIG_FILENAME_PTR(fp)		; If a file was specified, we must have found one
 	bne	ErrorConfigFileNotFound			; Else it's a fatal error
-	
+
 	move.l	d0,-(sp)				; Default file name ptr
 	pea	StrNoDefaultConfigFile(pc)		; Warning message
 	bsr	print::PrintToStdout
 	addq.l	#8,sp
 	rts
-	
+
 	;------------------------------------------------------------------------------------------
 	;	A file was found, let's parse it
 	;------------------------------------------------------------------------------------------

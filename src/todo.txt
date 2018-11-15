@@ -1,2 +1,1 @@
-- add hour and date in the -v switch
 - invalid args are handled as if they return a PDTLIB_STOP_PARSING value

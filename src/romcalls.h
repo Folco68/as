@@ -1,9 +1,11 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 ; 'NoStub' Include file
 
 	ifnd	FirstWindow
 
 _nostub
-	
+
 ST_showHelp		equ	$0E6
 DrawTo	equ	$19C
 DrawStrXY	equ	$1A9
@@ -1012,7 +1014,7 @@ next_token	equ	$3c7
 nonblank	equ	$3c8
 push_parse_prgm_or_func_text	equ	$3c9
 push_parse_text	equ	$3ca
-	
+
 	ifnd	_library
 _ti89
 _ti89ti
@@ -1067,11 +1069,11 @@ FAST_ROM_CALL macro
 	move.l	\1*4(\2),a0
 	jsr	(a0)
 	endm
-	
+
 FAST_ROM_PTR	macro
 	move.l	\1*4(\2),a0
 	endm
-	
+
 ROM_THROW macro
  dc.w $F800+\1
  endm
@@ -1086,7 +1088,7 @@ PUSH_LCD_MEM	macro
 \\@loop		move.l	(a0)+,-(a7)
 		dbf	d0,\\@loop
 		endm
-		
+
 POP_LCD_MEM	macro
 	lea	LCD_MEM+3840,a0
 	move.w	#3840/4-1,d0
@@ -1098,6 +1100,6 @@ DEFINE		macro
 \1	xdef	\1
 		endm
 
-		
+
 	endif
-	endif	
+	endif

@@ -1,3 +1,5 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 	include "tios.h"
 	include "romcalls.h"
 	include "as.h"
@@ -8,7 +10,7 @@
 	include "pdtlib.h"
 	include "pdrmramc.h"
 	include "stckfrm.h"
-	
+
 	xdef	_ti89
 	xdef	_ti89ti
 	xdef	_ti92plus
@@ -17,7 +19,7 @@
 	DEFINE	_main					; Entry point
 	DEFINE	_flag_2					; No redraw screen
 	DEFINE	_flag_3					; Read-only
-	
+
 ;==================================================================================================
 ;	Check the OS and its version
 ;==================================================================================================
@@ -28,14 +30,14 @@
 		ROMC	ST_helpMsg			; The libc is not loaded yet, we can't throw to stderr
 		moveq.l	#ERROR_BOOT,d0
 		RAMC	kernel_exit
-	
+
 \OSok:	cmpi.w	#PEDROM_MINIMUM_VERSION,OS_VERSION	; We need at least PedroM 0.83 with a patched kernel::LibsExec
 	bcs.s	\WrongOS
 
 ;==================================================================================================
 ;	Create the stack frame, and begin to populate it
 ;==================================================================================================
-	
+
 	lea	-STACK_FRAME_SIZE(sp),sp		; Create the stack frame
 	movea.l	sp,fp					; a6 is used as a global pointer in the whole program
 	move.w	4+STACK_FRAME_SIZE(sp),ARGC(fp)		; argc
@@ -53,14 +55,14 @@
 	lea	PdtlibFunctionTable(pc),a1		; Table of pdtlib functions
 	lea	PdtlibOffsetTable(pc),a2		; Table of trampolines offsets in the stack frame
 	movea.l	fp,a3					; Stack frame base
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Args of kernel::LibsExec
 	;------------------------------------------------------------------------------------------
 	move.b	#PDTLIB_VERSION,-(sp)			; Lib version
 	move.w	#PDTLIB_INSTALL_TRAMPOLINES,-(sp)	; Function
 	pea	PdtlibFilename(pc)			; Lib name
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Call and check
 	;------------------------------------------------------------------------------------------
@@ -84,7 +86,7 @@
 	jsr	INSTALL_TRAMPOLINES(fp)			; pdtlib::InstallTrampolines
 	move.l	a0,LIBC_DESCRIPTOR(fp)			; Test and save descriptor
 	bne.s	\LibcOk
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Loading failed. We need to close Pdtlib before exiting
 	;------------------------------------------------------------------------------------------
@@ -98,7 +100,7 @@
 ;	The address put in STDERR(fp) is the one of the PedroM's RAM Data Table
 ;	Wen want the one of stderr
 ;==================================================================================================
-	
+
 	movea.l	2+STDERR(fp),a0				; +2: skip jmp opcode
 	move.l	PEDROM_stderr(a0),STDERR(fp)
 
@@ -114,13 +116,13 @@
 ;==================================================================================================
 ;	Execution process and command line parsing
 ;
-;	1. Parse the CLI, looking for commands, ignoring compilation flags nd source files
+;	1. Parse the CLI, looking for commands, ignoring compilation flags and source files
 ;	2. Read the config file, if there is one to parse
 ;	3. Parse the global compilation files
 ;	4. Get the first source file, read its flags, then assemble it
 ;	5. Loop while a source file remains
 ;==================================================================================================
-	
+
 	;------------------------------------------------------------------------------------------
 	;	First pass
 	;------------------------------------------------------------------------------------------
@@ -129,7 +131,7 @@
 	movea.l	ARGV(fp),a1
 	jsr	INIT_CMDLINE(fp)
 	bsr	cli::ParseCommands
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Parse the config file
 	;------------------------------------------------------------------------------------------
@@ -146,11 +148,11 @@ ExitError:
 	;------------------------------------------------------------------------------------------
 	;	Display an exit message indicating the error code
 	;	The error code must be in d3.w
-	;------------------------------------------------------------------------------------------	
+	;------------------------------------------------------------------------------------------
 	move.w	d3,-(sp)
 	pea	StrExit(pc)
 	bsr	print::PrintToStdout
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Unload the libc and Pdtlib
 	;------------------------------------------------------------------------------------------
@@ -158,13 +160,13 @@ ExitError:
 	RAMC	kernel_LibsEnd
 	movea.l	LIBC_DESCRIPTOR(fp),a0
 	RAMC	kernel_LibsEnd
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Exit point
 	;------------------------------------------------------------------------------------------
 	move.w	d3,d0					; Return code for the kernel
 	RAMC	kernel_exit
-	
+
 
 ;==================================================================================================
 ;	Exit procedures (in case of error)
@@ -177,7 +179,7 @@ ExitError:
 PrintError:
 	bsr	print::PrintToStderr
 	bra.s	ExitError
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Invalid switch found in the command line
 	;------------------------------------------------------------------------------------------
@@ -189,7 +191,7 @@ ErrorInvalidSwitch:
 	;------------------------------------------------------------------------------------------
 	;	Switch not found in the tables
 	;------------------------------------------------------------------------------------------
-ErrorSwitchNotFound:	
+ErrorSwitchNotFound:
 	moveq.l	#ERROR_SWITCH_NOT_FOUND,d3
 	pea	StrErrorSwitchNotFound(pc)
 	bra.s	PrintError
@@ -197,12 +199,12 @@ ErrorSwitchNotFound:
 	;------------------------------------------------------------------------------------------
 	;	Invalid return value from a CLI callback (should never happen)
 	;------------------------------------------------------------------------------------------
-ErrorInvalidReturnValue:	
+ErrorInvalidReturnValue:
 	moveq.l	#ERROR_INVALID_RETURN_VALUE,d3
 	move.w	d1,-(sp)				; Return value
 	pea	StrErrorInvalidReturnValue(pc)
 	bra.s	PrintError
-	
+
 	;------------------------------------------------------------------------------------------
 	;	A callback stopped CLI parsing (should never happen)
 	;------------------------------------------------------------------------------------------
@@ -226,7 +228,7 @@ ErrorNoArgForConfig:
 	moveq.l	#ERROR_NO_ARG_FOR_CONFIG,d3
 	pea	StrErrorNoArgForConfig(pc)
 	bra.s	PrintError
-	
+
 	;------------------------------------------------------------------------------------------
 	;	The configuration file specified with --config was not found
 	;------------------------------------------------------------------------------------------
@@ -235,7 +237,7 @@ ErrorConfigFileNotFound:
 	move.l	CUSTOM_CONFIG_FILENAME_PTR(fp),-(sp)
 	pea	StrErrorConfigFilenameNotFound(pc)
 	bra.s	PrintError
-	
+
 
 ;==================================================================================================
 ;	Sources inclusion

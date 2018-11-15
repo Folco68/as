@@ -1,3 +1,5 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 ;==================================================================================================
 ;	PrintToStdout
 ;
@@ -20,7 +22,7 @@ print::PrintToStdout:
 	movem.l	STD_REGS(fp),d0-d2/a0-a1	; Restore destryed registers
 	rts
 
-	
+
 ;==================================================================================================
 ;	PrintToStderr
 ;
@@ -35,7 +37,7 @@ print::PrintToStdout:
 ;==================================================================================================
 
 print::PrintToStderr:
-		
+
 	movem.l	d0-d2/a0-a1,STD_REGS(fp)	; Save destroyed registers
 	move.l	(sp),RETURN_VALUE(fp)		; Save the return value, to get args at (sp)
 	move.l	STDERR(fp),(sp)			; Set the error stream

@@ -1,6 +1,8 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 ; 'Kernel' include files
 	ifnd	_library
-	
+
 _library
 _ti89ti
 _ti89
@@ -1095,19 +1097,19 @@ SYM_ENTRY.sizeof	equ tios::SYM_ENTRY.sizeof
 
 ; Flags value :
 SF_GREF1 equ $0001
-SF_GREF2 equ $0002 
-SF_STATVAR equ $0004 
-SF_LOCKED equ $0008 
-SF_HIDDEN equ $0010 
-SF_OPEN equ $0010 
-SF_CHECKED equ $0020 
-SF_OVERWRITTEN equ $0040 
-SF_FOLDER equ $0080 
-SF_INVIEW equ $0100 
-SF_ARCHIVED equ $0200 
-SF_TWIN equ $0400 
-SF_COLLAPSED equ $0800 
-SF_LOCAL equ $4000 
+SF_GREF2 equ $0002
+SF_STATVAR equ $0004
+SF_LOCKED equ $0008
+SF_HIDDEN equ $0010
+SF_OPEN equ $0010
+SF_CHECKED equ $0020
+SF_OVERWRITTEN equ $0040
+SF_FOLDER equ $0080
+SF_INVIEW equ $0100
+SF_ARCHIVED equ $0200
+SF_TWIN equ $0400
+SF_COLLAPSED equ $0800
+SF_LOCAL equ $4000
 SF_BUSY equ $8000
 
 ; Queue structure
@@ -1118,23 +1120,23 @@ QUEUE.used	EQU	6
 QUEUE.data	EQU	8
 
 ; Window Structure
-WINDOW.Flags		EQU	0	;/* Window flags */ 
-WINDOW.CurFont		EQU	2	; unsigned char CurFont; /* Current font */ 
-WINDOW.CurAttr		EQU	3	; unsigned char CurAttr; /* Current attribute */ 
-WINDOW.Background	EQU	4	; unsigned char Background; /* Current background attribute */ 
-WINDOW.TaskId		EQU	6	; short TaskId; /* Task ID of owner */ 
+WINDOW.Flags		EQU	0	;/* Window flags */
+WINDOW.CurFont		EQU	2	; unsigned char CurFont; /* Current font */
+WINDOW.CurAttr		EQU	3	; unsigned char CurAttr; /* Current attribute */
+WINDOW.Background	EQU	4	; unsigned char Background; /* Current background attribute */
+WINDOW.TaskId		EQU	6	; short TaskId; /* Task ID of owner */
 WINDOW.CurX		EQU	8	; short CurX
-WINDOW.CurY		EQU	10	; short CurY; /* Current (x,y) position (relative coordinates) */ 
+WINDOW.CurY		EQU	10	; short CurY; /* Current (x,y) position (relative coordinates) */
 WINDOW.CursorX		EQU	12	; short CursorX
-WINDOW.CursorY		EQU	14	; short CursorY; /* Cursor (x,y) position */ 
-WINDOW.Client		EQU	16	; SCR_RECT Client; /* Client region of the window (excludes border) */ 
-WINDOW.Window		EQU	20	; SCR_RECT Window; /* Entire window region including border */ 
-WINDOW.Clip		EQU	24	; SCR_RECT Clip; /* Current clipping region */ 
-WINDOW.Port		EQU	28	; SCR_RECT Port; /* Port region for duplicate screen */ 
-WINDOW.DupScr		EQU	34	; unsigned short DupScr; /* Handle of the duplicated or saved screen area */ 
-WINDOW.Next		EQU	36	; struct WindowStruct *Next; /* Pointer to the next window in the linked list */ 
-WINDOW.Title		EQU	40	; char *Title; /* Pointer to the (optional) title */ 
-WINDOW.savedScrState	EQU	44	; SCR_STATE savedScrState; /* Saved state of the graphics system */ 
+WINDOW.CursorY		EQU	14	; short CursorY; /* Cursor (x,y) position */
+WINDOW.Client		EQU	16	; SCR_RECT Client; /* Client region of the window (excludes border) */
+WINDOW.Window		EQU	20	; SCR_RECT Window; /* Entire window region including border */
+WINDOW.Clip		EQU	24	; SCR_RECT Clip; /* Current clipping region */
+WINDOW.Port		EQU	28	; SCR_RECT Port; /* Port region for duplicate screen */
+WINDOW.DupScr		EQU	34	; unsigned short DupScr; /* Handle of the duplicated or saved screen area */
+WINDOW.Next		EQU	36	; struct WindowStruct *Next; /* Pointer to the next window in the linked list */
+WINDOW.Title		EQU	40	; char *Title; /* Pointer to the (optional) title */
+WINDOW.savedScrState	EQU	44	; SCR_STATE savedScrState; /* Saved state of the graphics system */
 
 ; ???
 ;tios::MaxHandles	equ	tios::Heap-$16
@@ -1268,7 +1270,7 @@ ROM_CALL2 macro
  move.l ($C8),a4
  move.l \1*4(a4),a4
  endm
-	
+
 FAST_ROM_CALL macro
 	move.l	\1*4(\2),a0
 	jsr	(a0)
@@ -1280,7 +1282,7 @@ PUSH_LCD_MEM	macro
 \\@loop		move.l	(a0)+,-(a7)
 		dbf	d0,\\@loop
 		endm
-		
+
 POP_LCD_MEM	macro
 	lea	LCD_MEM+3840,a0
 	move.w	#3840/4-1,d0
@@ -1291,6 +1293,6 @@ POP_LCD_MEM	macro
 DEFINE		macro
 \1	xdef	\1
 		endm
-	
+
 	endif
-	
+

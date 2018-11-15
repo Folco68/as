@@ -1,3 +1,5 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 ;==================================================================================================
 ;	Table of functions of Pdtlib
 ;==================================================================================================
@@ -11,7 +13,7 @@ PdtlibFunctionTable:
 	dc.w	PDTLIB_PARSE_CMDLINE
 	dc.w	PDTLIB_GET_FILE_PTR
 	dc.w	-1				; End of table
-	
+
 ;==================================================================================================
 ;	Offsets of Pdtlib trampolines in the stack frame
 ;==================================================================================================
@@ -34,7 +36,7 @@ LibcFunctionTable:
 	dc.w	PEDROM_PRINTF
 	dc.w	PEDROM_FPRINTF
 	dc.w	-1				; End of table
-	
+
 ;==================================================================================================
 ;	Offsets of the libc trampolines in the stack frame
 ;==================================================================================================

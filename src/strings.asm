@@ -1,3 +1,5 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 ;==================================================================================================
 ;	External libraries names
 ;==================================================================================================
@@ -15,7 +17,7 @@ CLICommands:	dc.b	"f","flags",0		; Display the flags with which as was compiled
 		dc.b	"v","version",0		; Disply version
 		dc.b	0,"config",0		; Specify a config file to use
 		dc.b	0,0			; End of table
-		
+
 ;==================================================================================================
 ;	Flags parsed in CLI or in a config file
 ;==================================================================================================
@@ -23,7 +25,7 @@ CLICommands:	dc.b	"f","flags",0		; Display the flags with which as was compiled
 CLIFlags:	dc.b	"s","strict",0		; Don't fix automatically wrong instructions
 		dc.b	"x","xan",0		; Optimize x(an) into (an) if x = 0
 		dc.b	0,0			; End of table
-		
+
 ;==================================================================================================
 ;	Error messages
 ;==================================================================================================
@@ -45,7 +47,10 @@ StrExit:		dc.b	"as exiting with code %i",EOL,0
 StrVersion:		dc.b	"as v"
 			include "version.h"
 			dc.b	" by Martial Demolins AKA Folco",EOL
-			dc.b	"License: GPL3",EOL,0
+			dc.b	"License: GPL3",EOL
+			dc.b	"Build: "
+			include "info.h"
+			dc.b	EOL,0
 StrSwapWarning:		dc.b	"WARNING: using the swap intensively may damage your calculator",EOL,0
 StrHelp:		dc.b	"Usage: as [commands/global opts] src1 [src1 opts] src2...",EOL
 			dc.b	"Use commands/opts with -, --, + or ++",EOL

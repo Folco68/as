@@ -1,3 +1,5 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 ;==================================================================================================
 ;	Export macro
 ;==================================================================================================
@@ -10,17 +12,17 @@ PDTLIB_\3	equ	$\1
 ;==================================================================================================
 ;	Library exports
 ;==================================================================================================
-	
+
 	; Libraries
 	pdtlib_export	0000,InstallTrampolines,INSTALL_TRAMPOLINES
-	
+
 	; Command line
 	pdtlib_export	0001,InitCmdline,INIT_CMDLINE
 	pdtlib_export	0002,ResetCmdline,RESET_CMDLINE
 	pdtlib_export	0003,GetNextArg,GET_NEXT_ARG
 	pdtlib_export	0004,GetCurrentArg,GET_CURRENT_ARG
 	pdtlib_export	0005,ParseCmdline,PARSE_CMDLINE
-	
+
 	; Files
 	pdtlib_export	0006,GetFilePtr,GET_FILE_PTR
 
