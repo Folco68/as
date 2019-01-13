@@ -1,7 +1,9 @@
 ; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
 
 ;==================================================================================================
+;
 ;	Flags
+;
 ;==================================================================================================
 
 CompilationFlags:	dc.l	FLAG_STRICT<<BIT_STRICT+FLAG_XAN<<BIT_XAN+FLAG_SWAP<<BIT_SWAP
@@ -24,9 +26,11 @@ CompilationFlags:	dc.l	FLAG_STRICT<<BIT_STRICT+FLAG_XAN<<BIT_XAN+FLAG_SWAP<<BIT_
 ;==================================================================================================
 
 flags::SetFlag
+
 	;------------------------------------------------------------------------------------------
 	;	Read the current flags
 	;------------------------------------------------------------------------------------------
+
 	movem.l	d2/a0,-(sp)
 	movea.l	FLAGS_PTR(fp),a0
 	move.l	(a0),d2
@@ -34,6 +38,7 @@ flags::SetFlag
 	;------------------------------------------------------------------------------------------
 	;	Default: enable the flag. Else disable it if the sign is #'-', then quit
 	;------------------------------------------------------------------------------------------
+
 	bset.l	d1,d2
 	cmpi.b	#'+',d0
 	beq.s	\Enabled

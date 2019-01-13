@@ -1,14 +1,19 @@
 ; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
 
 ;==================================================================================================
+;
 ;	External libraries names
+;
 ;==================================================================================================
 
 PdtlibFilename:		dc.b	"pdtlib",0	; Used to load pdtlib
 LibcFilename:		dc.b	"pedrom",0	; Used to load the PedroM's libc
 
+
 ;==================================================================================================
+;
 ;	Commands parsed in CLI
+;
 ;==================================================================================================
 
 CLICommands:	dc.b	"f","flags",0		; Display the flags with which as was compiled
@@ -18,16 +23,22 @@ CLICommands:	dc.b	"f","flags",0		; Display the flags with which as was compiled
 		dc.b	0,"config",0		; Specify a config file to use
 		dc.b	0,0			; End of table
 
+
 ;==================================================================================================
+;
 ;	Flags parsed in CLI or in a config file
+;
 ;==================================================================================================
 
 CLIFlags:	dc.b	"s","strict",0		; Don't fix automatically wrong instructions
 		dc.b	"x","xan",0		; Optimize x(an) into (an) if x = 0
 		dc.b	0,0			; End of table
 
+
 ;==================================================================================================
+;
 ;	Error messages
+;
 ;==================================================================================================
 
 StrErrorWrongOS:			dc.b	"as needs PedroM 0.83 or higher",0			; Boot failed
@@ -39,8 +50,11 @@ StrErrorUnhandledPdtlibReturnValue:	dc.b	"Unhandled value returned by Pdtlib: %i
 StrErrorNoArgForConfig:			dc.b	"Switch 'config' needs a filename",EOL,0		; No argument for the --config switch
 StrErrorConfigFilenameNotFound:		dc.b	"Config file '%s' not found",EOL,0			; The specified config file couldn't be found
 
+
 ;==================================================================================================
+;
 ;	Verbosity
+;
 ;==================================================================================================
 
 StrExit:		dc.b	"as exiting with code %i",EOL,0

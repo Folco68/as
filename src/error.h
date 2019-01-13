@@ -1,7 +1,9 @@
 ; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
 
 ;==================================================================================================
+;
 ;	Offsets of Pdtlib trampolines in the stack frame
+;
 ;==================================================================================================
 
 ERROR_NO_ERROR				equ	0	; Return value when as terminates normally

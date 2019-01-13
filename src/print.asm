@@ -1,6 +1,7 @@
 ; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
 
 ;==================================================================================================
+;
 ;	PrintToStdout
 ;
 ;	Print a formatted string on stdout, without destroying any register
@@ -24,6 +25,7 @@ print::PrintToStdout:
 
 
 ;==================================================================================================
+;
 ;	PrintToStderr
 ;
 ;	Print a formatted string on stderr, without destroying any register

@@ -1,7 +1,9 @@
 ; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
 
 ;==================================================================================================
+;
 ;	Constants used for system check at boot
+;
 ;==================================================================================================
 
 OS_VERSION			equ	$30
@@ -14,7 +16,9 @@ PDTLIB_VERSION			equ	2	; Minimum version of Pdtlib
 LIBC_VERSION			equ	1	; Minimum version of the PedroM's libc
 
 ;==================================================================================================
+;
 ;	ROM call macro. It's ROM_THROW, but shorter to avoid breaking indentation
+;
 ;==================================================================================================
 
 ROMC	macro
@@ -22,7 +26,12 @@ ROMC	macro
 	endm
 
 ;==================================================================================================
+;
 ;	Parsing constants
+;
 ;==================================================================================================
 
-EOL	equ	$0D
+EOL			equ	$0D
+SPACE			equ	$20
+HTAB			equ	$09
+CONFIG_FILE_COMMENT	equ	'#'

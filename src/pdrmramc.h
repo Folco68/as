@@ -1,8 +1,10 @@
 ; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
 
 ;==================================================================================================
+;
 ;	PedroM's custom header, allowing libc calls through LibsCall/LibsExec;
 ;	See Library.asm of PedroM for more details
+;
 ;==================================================================================================
 
 PEDROM_RAMDATATABLE	equ	$00
@@ -54,7 +56,9 @@ PEDROM_KERNEL__EXIT	equ	$2D
 PEDROM_KERNEL__ATEXIT	equ	$2E
 
 ;==================================================================================================
+;
 ;	RAM data table
+;
 ;==================================================================================================
 
 PEDROM_stdin		equ	0
