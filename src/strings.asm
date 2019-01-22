@@ -49,6 +49,7 @@ StrErrorStoppedByCallback:		dc.b	"The callback of %s stopped the CLI parsing",EO
 StrErrorUnhandledPdtlibReturnValue:	dc.b	"Unhandled value returned by Pdtlib: %i",EOL,0		; Pdtlib returned an unknown value
 StrErrorNoArgForConfig:			dc.b	"Switch 'config' needs a filename",EOL,0		; No argument for the --config switch
 StrErrorConfigFilenameNotFound:		dc.b	"Config file '%s' not found",EOL,0			; The specified config file couldn't be found
+StrErrorMemory:				dc.b	"Not enough memory",EOL,0				; Not enough memory to (re)alloc
 
 
 ;==================================================================================================
@@ -74,3 +75,12 @@ StrHelp:		dc.b	"Usage: as [commands/global opts] src1 [src1 opts] src2...",EOL
 			dc.b	"h, help: print this help",EOL
 			dc.b	"config <file>: specify a custom config file",EOL,0
 StrNoDefaultConfigFile:	dc.b	"Config file '%s' not found",EOL,0
+
+
+;==================================================================================================
+;
+;	Parsing strings
+;
+;==================================================================================================
+
+StrConfigFileSeparator:	dc.b	SPACE,HTAB,CONFIG_FILE_COMMENT,EOL,0					; Separators after a switch in the config file

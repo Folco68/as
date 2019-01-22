@@ -25,7 +25,7 @@ CompilationFlags:	dc.l	FLAG_STRICT<<BIT_STRICT+FLAG_XAN<<BIT_XAN+FLAG_SWAP<<BIT_
 ;
 ;==================================================================================================
 
-flags::SetFlag
+flags::SetFlag:
 
 	;------------------------------------------------------------------------------------------
 	;	Read the current flags

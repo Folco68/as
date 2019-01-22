@@ -41,6 +41,7 @@ LibcFunctionTable:
 	dc.w	PEDROM_RAMDATATABLE		; To get stderr
 	dc.w	PEDROM_PRINTF
 	dc.w	PEDROM_FPRINTF
+	dc.w	PEDROM_REALLOC
 	dc.w	-1				; End of table
 
 ;==================================================================================================
@@ -53,3 +54,4 @@ LibcOffsetTable:
 	dc.w	STDERR
 	dc.w	PRINTF
 	dc.w	FPRINTF
+	dc.w	REALLOC

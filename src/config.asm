@@ -18,7 +18,7 @@
 ;
 ;==================================================================================================
 
-config::ParseConfigFile
+config::ParseConfigFile:
 
 	;------------------------------------------------------------------------------------------
 	;	Copy the custom filename in the buffer if one is specified
@@ -74,15 +74,15 @@ config::ParseConfigFile
 	;------------------------------------------------------------------------------------------
 
 \FileFound:
-	pea	(a2)					; a2 is used to read the file
+	pea	(a2)					; a2 = file reader
 	movea.l	d1,a2					; very first byte of the config file
 	addq.l	#4,a2					; skip size + TIOS header
 
-	lea	ConfigBufferData(pc),a0			; Container header data
+	lea	\ConfigBufferData(pc),a0		; Container header data
 	lea	CONFIG_BUFFER_HD(fp),a1			; handle*
 	bsr	container::Create			; Create the container
 
-	lea	ArgvBufferData(pc),a0
+	lea	\ArgvBufferData(pc),a0
 	lea	ARGV_BUFFER_HD(fp),a1
 	bsr	container::Create
 
@@ -111,9 +111,63 @@ config::ParseConfigFile
 	cmpi.b	#EOL,d0					; EOL
 	beq.s	\LineLoop
 
+	;------------------------------------------------------------------------------------------
+	;	Something found, add it to the buffer
+	;------------------------------------------------------------------------------------------
+
+	move.w	CONFIG_BUFFER_HD(fp),d0			; Handle
+	movea.l	a2,a0					; String to add
+	lea	StrConfigFileSeparator(pc),a1		; Separators which terminate a switch
+	bsr	container::AddString
+	adda.l	d0,a2					; Add the string size to a2
+	addq.l	#1,a2					; Skip terminal 0
+	bra.s	\NextChar				; And look for another switch
+
+\EndOfFileParsing:
+
+	;==========================================================================================
+	;
+	;	Parsing done, create the argv table
+	;
+	;==========================================================================================
 
 
-\EndOfFileParsing:					; At this moment, a2 points to a random character
+	;------------------------------------------------------------------------------------------
+	;	Add a first dummy entry to simulate the pointer to the program name in the argv table
+	;------------------------------------------------------------------------------------------
+
+	move.w	ARGV_BUFFER_HD(fp),d0			; Container handle
+	suba.l	a1,a1					; Just to be sure that the pointer is valid
+	bsr	container::AddEntry			; Add it
+
+	;------------------------------------------------------------------------------------------
+	;	Add a first dummy entry to simulate the pointer to the program name in the argv table
+	;------------------------------------------------------------------------------------------
+
+\AddArgvEntry:
+	moveq.l	#0,d1					; Rank of the string we want in the config buffer
+	move.w	CONFIG_BUFFER_HD(fp),d0			; Config buffer handle
+	bsr	container::GetEntryPtr			; Get a pointer to the entry
+	move.l	a0,d0					; The entry exists ?
+	beq.s	\ArgvTableFilled			; No, nothing more to add
+	pea	(a0)					; Else push data
+	lea	(sp),a0					; Get a pointer to it
+	move.w	ARGV_BUFFER_HD(fp),d0			; Get argv buffer handle
+	bsr	container::AddEntry			; And add the pointer of the string
+	addq.l	#4,sp					; Pop pointer
+	bra.s	\AddArgvEntry				; And loop
+
+\ArgvTableFilled:
+
+
+
+					; At this moment, a2 points to a random character
+
+
+	; browse the config buffer
+	;	for (0; CfgBuffer.count() - 1;) {
+	;		ArgvBuffer.addEntry(getEntryPtr(CfgBuffer));
+	;	}
 
 
 	;------------------------------------------------------------------------------------------
@@ -128,7 +182,7 @@ config::ParseConfigFile
 	bsr	mem::Free				; Delete config buffer
 	clr.w	ARGV_BUFFER_HD(fp)			; Prevent the buffer to be deleted on exit
 
-	movea.l	(sp)+,a2				; Restore a2
+	movem.l	(sp)+,a2
 \End:	rts
 
 	;------------------------------------------------------------------------------------------
@@ -140,7 +194,7 @@ config::ParseConfigFile
 	beq.s	\EndOfFileParsing			; EOL => no next line
 	cmpi.b	#EOL,d0					; EOL found?
 	bne.s	\SkipLine				; No, parse next char
-	bra.s	\LineLoop				; Else parse a new line
+	bra	\LineLoop				; Else parse a new line
 
 
 ;==================================================================================================
@@ -149,10 +203,10 @@ config::ParseConfigFile
 ;
 ;==================================================================================================
 
-ConfigBufferData:
+\ConfigBufferData:
 	dc.w	50		; 50 entries
 	dc.w	1		; Of 1 byte (data are string)
 
-ArgvBufferData:
+\ArgvBufferData:
 	dc.w	10		; 10 entries
 	dc.w	4		; table of pointer

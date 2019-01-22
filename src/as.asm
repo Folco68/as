@@ -278,6 +278,15 @@ ErrorConfigFileNotFound:
 	pea	StrErrorConfigFilenameNotFound(pc)
 	bra.s	PrintError
 
+	;------------------------------------------------------------------------------------------
+	;	Not enough memory to (re)allocate
+	;------------------------------------------------------------------------------------------
+
+ErrorMemory:
+	moveq.l	#ERROR_MEMORY,d3
+	pea	StrErrorMemory(pc)
+	bra.s	PrintError
+
 
 ;==================================================================================================
 ;

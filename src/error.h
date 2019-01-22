@@ -17,3 +17,4 @@ ERROR_STOPPED_BY_CALLBACK		equ	7	; CLI parsing stopped by a callback
 ERROR_UNHANDLED_PDTLIB_RETURN_VALUE	equ	8	; Invalid return value from Pdtlib
 ERROR_NO_ARG_FOR_CONFIG			equ	9	; No arg provded after the switch "config"
 ERROR_CONFIG_FILE_NOT_FOUND		equ	10	; The config file specified in the command line was not found
+ERROR_MEMORY				equ	11	; Not enough memory to (re)alloc
