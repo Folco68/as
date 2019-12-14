@@ -1,15 +1,9 @@
-Containers
-----------
-
-Provide:
-CreateContainer(CONTAINER_SPEC*);
-GetNewEntryPtr(); // (if necessary, swap out, realloc)
-GetCurrentEntryPtr/GetLastEntryPtr();
-AddEntry(ENTRY*, CONTAINER*, 14591587, ...);
-AddStringWithLimiter(ENTRY*, CONTAINER*, LimiterString);
-
-
 Memory management
 -----------------
 
-NeedRAM() could return true if some data have been swapped in, it would allow fine-tuned swapping
+NeedRAM() could return true if some data have been swapped in, it would allow fine-tuned swaping
+
+
+Build process
+-------------
+

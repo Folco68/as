@@ -4,7 +4,6 @@
 	include "romcalls.h"
 	include "as.h"
 	include "config.h"
-	include "cntnr.h"
 	include "error.h"
 	include "flags.h"
 	include "krnlramc.h"
@@ -17,9 +16,9 @@
 	xdef	_ti92plus
 	xdef	_v200
 
-	DEFINE	_main					; Entry point
-	DEFINE	_flag_2					; No redraw screen
-	DEFINE	_flag_3					; Read-only
+	DEFINE	_main					; Program entry point
+	DEFINE	_flag_2					; Don't redraw screen
+	DEFINE	_flag_3					; Binary is read-only
 
 
 ;==================================================================================================
@@ -77,7 +76,7 @@
 	;	Call and check
 	;------------------------------------------------------------------------------------------
 
-	RAMC	kernel_LibsExec				; Reloc and opens Pdtlib
+	RAMC	kernel_LibsExec				; Reloc and open Pdtlib
 	tst.l	(sp)					; Test success
 	bne.s	\PdtlibOk
 		moveq.l	#ERROR_PDTLIB,d0		; Failed to load Pdtlib
@@ -95,7 +94,7 @@
 	lea	LibcFilename(pc),a0			; Libc name
 	lea	LibcFunctionTable(pc),a1		; Table of the libc functions
 	lea	LibcOffsetTable(pc),a2			; Table of trampolines offsets in the stack frame
-	;movea.l	fp,a3				; The stack frame base is already set
+	;movea.l	fp,a3				; Stack frame base already set
 	jsr	INSTALL_TRAMPOLINES(fp)			; pdtlib::InstallTrampolines
 	move.l	a0,LIBC_DESCRIPTOR(fp)			; Test and save descriptor
 	bne.s	\LibcOk
@@ -113,7 +112,7 @@
 ;==================================================================================================
 ;
 ;	The address put in STDERR(fp) is the one of the PedroM's RAM Data Table
-;	Wen want the one of stderr
+;	We want the one of stderr
 ;
 ;==================================================================================================
 
@@ -130,8 +129,8 @@
 	move.l	CompilationFlags(pc),(a0)		; They are initialized with the user-defined compilation flags
 	move.l	a0,FLAGS_PTR(fp)			; The flags pointer points to these global flags
 	clr.l	CUSTOM_CONFIG_FILENAME_PTR(fp)		; Default: no custom config file
-	clr.w	CONFIG_BUFFER_HD(fp)			; Used for the config file parsing
-	clr.w	ARGV_BUFFER_HD(fp)			; Used for the config file parsing
+	clr.l	CURRENT_SRC_FILENAME_PTR(fp)		; Default: no source to assemble
+	clr.w	FILE_LIST_HD(fp)			; Handle containing the list of the currently assembled files
 
 ;==================================================================================================
 ;
@@ -139,7 +138,7 @@
 ;
 ;	1. Parse the CLI, looking for commands, ignoring compilation flags and source files
 ;	2. Read the config file, if there is one to parse
-;	3. Parse the global compilation files
+;	3. Parse the global compilation flags
 ;	4. Get the first source file, read its flags, then assemble it
 ;	5. Loop while a source file remains
 ;
@@ -161,6 +160,25 @@
 
 	bsr	config::ParseConfigFile
 
+	;------------------------------------------------------------------------------------------
+	;	Second pass
+	;------------------------------------------------------------------------------------------
+	
+	lea	CMDLINE(fp),a0
+	move.w	ARGC(fp),d0
+	movea.l	ARGV(fp),a1
+	jsr	INIT_CMDLINE(fp)
+	bsr	cli::ParseFiles
+	
+	;------------------------------------------------------------------------------------------
+	;	The last source file must be assembled after CLI parsing
+	;------------------------------------------------------------------------------------------
+	
+	move.l	CURRENT_SRC_FILENAME_PTR(fp),d0
+	beq.s	\NoFileOnHold
+		bsr	assembly::AssembleBaseFile
+\NoFileOnHold:
+
 ;==================================================================================================
 ;
 ;	Exit procedure
@@ -172,9 +190,10 @@
 
 ExitError:
 
+	bsr	asmhd::FreeAssemblyHandles		; Clean handles used to assemble files
+
 	;------------------------------------------------------------------------------------------
-	;	Display an exit message indicating the error code
-	;	The error code must be in d3.w
+	;	Display an exit message indicating the error code contained by d3.w
 	;------------------------------------------------------------------------------------------
 
 	move.w	d3,-(sp)
@@ -286,6 +305,29 @@ ErrorMemory:
 	moveq.l	#ERROR_MEMORY,d3
 	pea	StrErrorMemory(pc)
 	bra.s	PrintError
+	
+	;------------------------------------------------------------------------------------------
+	;	Something without +/- found in the config file
+	;------------------------------------------------------------------------------------------
+
+ErrorInvalidInConfigFile:
+	moveq.l	#ERROR_INVALID_ARG_IN_CONFIG_FILE,d3
+	lea	CMDLINE(pc),a0
+	jsr	GET_CURRENT_ARG(fp)
+	pea	(a0)
+	pea	StrErrorInvalidInConfigFile(pc)
+	bra.s	PrintError
+	
+	;------------------------------------------------------------------------------------------
+	;	File not found (base file or included file)
+	;	in	d3.l	filename
+	;------------------------------------------------------------------------------------------
+
+ErrorFileNotFound:
+	move.l	d3,-(sp)
+	moveq.l	#ERROR_FILE_NOT_FOUND,d3
+	pea	StrErrorFileNotFound(pc)
+	bra.s	PrintError
 
 
 ;==================================================================================================
@@ -295,10 +337,11 @@ ErrorMemory:
 ;==================================================================================================
 
 	include "flags.asm"				; CLI/config flags
-	include "cli.asm"				; Command line input
-	include "print.asm"				; Stdout/stderr handling
+	include "cli.asm"				; Command line input parsing and callbacks
+	include "print.asm"				; Stdout/stderr printing
 	include "config.asm"				; Default/custom config file parsing
-	include	"cntnr.asm"
-	include "mem.asm"
-	include "libs.asm"				; May be far from the executable code
-	include "strings.asm"				; Size may be odd
+	include "mem.asm"				; Heap and virtual memory management
+	include "asmhd.asm"				; Allocation/reallocation of handles used by the assembler parser
+	include "assembly.asm"				; Source parser and assembler engine
+	include "libs.asm"				; Contain only data, may be far from the executable code
+	include "strings.asm"				; All strings. WARNING: size may be odd

@@ -34,12 +34,22 @@ cli::ParseCommands:
 	lea	9*4(sp),sp			; Pop args
 
 	;------------------------------------------------------------------------------------------
+	;
+	;	!!! WARNING !!!
+	;	This code is used to handle the return value of config file parsing,
+	;	and the return value of the second pass
+	;
+	;------------------------------------------------------------------------------------------
+
+cli::CheckParsingReturnValue:
+
+	;------------------------------------------------------------------------------------------
 	;	Return if all was fine
 	;------------------------------------------------------------------------------------------
 
 	cmpi.w	#PDTLIB_END_OF_PARSING,d0
 	bne.s	\Error
-		rts
+		rts		
 \Error:
 
 	;------------------------------------------------------------------------------------------
@@ -72,6 +82,46 @@ cli::ParseCommands:
 
 ;==================================================================================================
 ;
+;	ParseFiles
+;
+;	Parse the CLI, looking for global flags, then source files and local flags
+;
+;	input	nothing
+;
+;	output	nothing
+;
+;	destroy	std
+;
+;==================================================================================================
+
+cli::ParseFiles:
+
+	pea	flags::FlagStrict(pc)
+	pea	flags::FlagXan(pc)
+	pea	assembly::AssembleFileFromCLI(pc)
+	pea	CLIFlags(pc)
+	pea	(fp)
+	pea	CMDLINE(fp)
+	jsr	PARSE_CMDLINE(fp)
+	
+	;------------------------------------------------------------------------------------------
+	;	Return value check
+	;------------------------------------------------------------------------------------------
+
+	bsr.s	cli::CheckParsingReturnValue
+
+
+	;------------------------------------------------------------------------------------------
+	;	Assemble the last source, on hold but not assembled yet
+	;------------------------------------------------------------------------------------------
+	
+	move.l	CURRENT_SRC_FILENAME_PTR(fp),d0
+	bne	assembly::AssembleBaseFile
+	rts
+
+
+;==================================================================================================
+;
 ;	Command callbacks
 ;
 ;	These callbaks are called by Pdtlib while parsing the command line
@@ -93,11 +143,17 @@ cli::ParseCommands:
 ;==================================================================================================
 
 DisplayVersion:
+
+	;------------------------------------------------------------------------------------------
+	;	Print the help text
+	;------------------------------------------------------------------------------------------
+
 	pea	(fp)				; Save frame pointer
 	movea.l	a0,fp				; Set the new one
 	pea	StrVersion(pc)			; Version text
 	bsr	print::PrintToStdout		; Print it
 	addq.l	#4,sp				; Pop text
+	bsr	RemoveCurrentArg		; Remove this command from the command line
 	movea.l	(sp)+,fp			; Restore frame pointer
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
@@ -117,6 +173,7 @@ SetConfigFile:
 
 	pea	(fp)
 	movea.l	a0,fp
+	bsr	RemoveCurrentArg		; Remove this command from the command line
 
 	;------------------------------------------------------------------------------------------
 	;	Get the next argument if one exists
@@ -130,7 +187,8 @@ SetConfigFile:
 	;------------------------------------------------------------------------------------------
 	;	Save the pointer of the filename, without additional check
 	;------------------------------------------------------------------------------------------
-
+	
+	bsr	RemoveCurrentArg		; Remove this command from the command line
 	move.l	a0,CUSTOM_CONFIG_FILENAME_PTR(fp)
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 \Error:	movea.l	(sp)+,fp			; Restore org frame pointer
@@ -174,6 +232,7 @@ EnableSwap:
 	;	Restore a6, set the return value and quit
 	;------------------------------------------------------------------------------------------
 
+	bsr	RemoveCurrentArg		; Remove this command from the command line
 	movea.l	(sp)+,fp
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
@@ -190,6 +249,7 @@ DisplayHelp:
 	pea	StrHelp(pc)
 	bsr	print::PrintToStdout
 	addq.l	#4,sp
+	bsr	RemoveCurrentArg		; Remove this command from the command line
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
@@ -202,6 +262,28 @@ DisplayHelp:
 
 DisplayFlags:
 
-
+	bsr	RemoveCurrentArg		; Remove this command from the command line
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
+	rts
+
+
+;==================================================================================================
+;
+;	RemoveCurrentArg
+;
+;	Remove the current argument from the argv structure. Adjust argc
+;
+;	input	fp	frame pointer
+;
+;	output	d0 = 0 if there is no arg to remove (end of command line reached)
+;
+;	destroy	d0/a
+;
+;==================================================================================================
+
+RemoveCurrentArg:
+
+	lea	CMDLINE(fp),a0
+	jsr	REMOVE_CURRENT_ARG(fp)
+	subq.w	#1,ARGC(fp)
 	rts

@@ -46,3 +46,53 @@ flags::SetFlag:
 \Enabled:
 	movem.l	(sp)+,d2/a0
 	rts
+
+
+;==================================================================================================
+;
+;	FlagStrict
+;
+;	Callback for Pdtlib::ParseCmdline
+;
+;	input	d0.b	sign. May be #'+' or #'-'
+;		a0	(void*)data (actually, frame pointer)
+;
+;	output	d0 = PDTLIB_CONTINUE_PARSING
+;
+;	destroy	d0
+;
+;==================================================================================================
+
+flags::FlagStrict:
+	pea	(a6)
+	movea.l	a0,a6
+	moveq.l	#BIT_STRICT,d1
+	bsr.s	flags::SetFlag
+	movea.l	(sp)+,a6
+	moveq.l	#PDTLIB_CONTINUE_PARSING,d0
+	rts
+
+
+;==================================================================================================
+;
+;	FlagXan
+;
+;	Callback for Pdtlib::ParseCmdline
+;
+;	input	d0.b	sign. May be #'+' or #'-'
+;		a0	(void*)data (actually, frame pointer)
+;
+;	output	d0 = PDTLIB_CONTINUE_PARSING
+;
+;	destroy	d0
+;
+;==================================================================================================
+
+flags::FlagXan:
+	pea	(a6)
+	movea.l	a0,a6
+	moveq.l	#BIT_XAN,d1
+	bsr.s	flags::SetFlag
+	movea.l	(sp)+,a6
+	moveq.l	#PDTLIB_CONTINUE_PARSING,d0
+	rts

@@ -50,6 +50,8 @@ StrErrorUnhandledPdtlibReturnValue:	dc.b	"Unhandled value returned by Pdtlib: %i
 StrErrorNoArgForConfig:			dc.b	"Switch 'config' needs a filename",EOL,0		; No argument for the --config switch
 StrErrorConfigFilenameNotFound:		dc.b	"Config file '%s' not found",EOL,0			; The specified config file couldn't be found
 StrErrorMemory:				dc.b	"Not enough memory",EOL,0				; Not enough memory to (re)alloc
+StrErrorInvalidInConfigFile:		dc.b	"Invalid in config file: %s",EOL,0			; Something without +/- found in the config file
+StrErrorFileNotFound:			dc.b	"File not found: %s",EOL,0				; A source file was not found (CLI or inclusion)
 
 
 ;==================================================================================================
@@ -75,6 +77,7 @@ StrHelp:		dc.b	"Usage: as [commands/global opts] src1 [src1 opts] src2...",EOL
 			dc.b	"h, help: print this help",EOL
 			dc.b	"config <file>: specify a custom config file",EOL,0
 StrNoDefaultConfigFile:	dc.b	"Config file '%s' not found",EOL,0
+StrParsingConfigFile:	dc.b	"Parsing config file: %s",EOL,0
 
 
 ;==================================================================================================

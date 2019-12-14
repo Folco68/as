@@ -13,7 +13,7 @@ tigcc -v --optimize-nops as.asm -o as
 
 # Cleanup
 mv *.??z ../bin/
-rm -f *.o
+rm -f *.o version.h 
 
 # Debug
-#cp ../bin/as.9xz ../../VTI/
+cp ../bin/as.9xz ../../VTI/

@@ -23,7 +23,6 @@ config::ParseConfigFile:
 	;------------------------------------------------------------------------------------------
 	;	Copy the custom filename in the buffer if one is specified
 	;------------------------------------------------------------------------------------------
-
 	move.l	CUSTOM_CONFIG_FILENAME_PTR(fp),d0		; Check if we have to use the default filename
 	bne.s	\CustomConfigFile
 
@@ -46,167 +45,169 @@ config::ParseConfigFile:
 	move.l	a0,d0
 
 	;------------------------------------------------------------------------------------------
-	;	The name has been created, check if a file exists
+	;	The name has been created, check if a text file exists
 	;------------------------------------------------------------------------------------------
 
 \CustomConfigFile:
-	movea.l	d0,a0
-	jsr	GET_FILE_PTR(fp)			; Get a pointer to the file content
-	move.l	a0,d1
-	bne.s	\FileFound
+	pea	(a3)					; Save regs
+	pea	(a2)
+	movea.l	d0,a2					; a2 = filename ptr
+	movea.l	sp,a3					; Save sp to restore it after file parsing
+	
+	movea.l	d0,a0					; Arg of pdtlib::CheckFileType
+	moveq.l	#$FFFFFFE0,d2				; We look for a text
+	jsr	CHECK_FILE_TYPE(fp)
+	tst.w	d0
+	beq.s	\FileFound
 
 		;------------------------------------------------------------------------------------------
-		;	No file found. Fatal error if --config switch specified, else we just display a warning
+		;	No file found or wrong file type
+		;	Fatal error if --config switch specified, else we just display a warning
 		;------------------------------------------------------------------------------------------
 
 		tst.l	CUSTOM_CONFIG_FILENAME_PTR(fp)	; If a file was specified, we must have found one
 		bne	ErrorConfigFileNotFound		; Else it's a fatal error
-		move.l	d0,-(sp)			; Default file name ptr
+		pea	DEFAULT_CONFIG_FILENAME_BUFFER(fp)
 		pea	StrNoDefaultConfigFile(pc)	; Warning message
 		bsr	print::PrintToStdout
-		addq.l	#8,sp
-		rts
+		bra	\End
 
-	;------------------------------------------------------------------------------------------
-	;	A file was found, let's parse it:
-	;	- create a buffer and copy inside the strings correponding to the switches in the config files (removing spaces, empty lines, comments etc)
-	;	- create a buffer with the argv* table
-	;------------------------------------------------------------------------------------------
+	;==========================================================================================
+	;
+	;	Prepare the file for parsing. We will use pdtlib::ParseCmdline to proceed.
+	;	- copy file content in a frame buffer
+	;	- put a null byte after each entry to emulate command line data format
+	;	- create the argv table, below the previous frame buffer
+	;	- create a CMDLINE structure below the argv table
+	;	- finally, call pdtlib::ParseCmdline
+	;
+	;==========================================================================================
 
 \FileFound:
-	pea	(a2)					; a2 = file reader
-	movea.l	d1,a2					; very first byte of the config file
-	addq.l	#4,a2					; skip size + TIOS header
-
-	lea	\ConfigBufferData(pc),a0		; Container header data
-	lea	CONFIG_BUFFER_HD(fp),a1			; handle*
-	bsr	container::Create			; Create the container
-
-	lea	\ArgvBufferData(pc),a0
-	lea	ARGV_BUFFER_HD(fp),a1
-	bsr	container::Create
-
-	;==========================================================================================
-	;
-	;	Parse the config file
-	;
-	;==========================================================================================
-
-\LineLoop:
-	addq.l	#1,a2					; Skip TIOS reserved char
-\NextChar:
-	move.b	(a2)+,d0				; Read a char
 
 	;------------------------------------------------------------------------------------------
-	;	Skip chars which must be ignored
+	;	Print a message saying that the config file is going to be parsed
 	;------------------------------------------------------------------------------------------
 
-	beq.s	\EndOfFileParsing			; EOF
+	pea	(a2)
+	pea	StrParsingConfigFile(pc)
+	bsr	print::PrintToStdout
+
+	;------------------------------------------------------------------------------------------
+	;	Initialize the reader of the file
+	;------------------------------------------------------------------------------------------
+
+	movea.l	a2,a0					; Filename
+	jsr	GET_FILE_PTR(fp)			; Get a ptr to data file
+	moveq.l	#0,d0					; Clear d0 (for config files > 32767 bytes! :D)
+	move.w	(a0),d0					; Read file size
+	suba.l	d0,sp					; Create a buffer to put the args parsed in the file
+	movea.l	sp,a2					; First byte of the buffer
+	addq.l	#4,a0					; Skip size + TIOS header
+	moveq.l	#1,d1					; argc. Initialized with 1 to emulate program name entry
+
+	;------------------------------------------------------------------------------------------
+	;	File parsing and copying
+	;------------------------------------------------------------------------------------------
+
+\NextLine:
+	addq.l	#1,a0					; Start a line
+
+	;------------------------------------------------------------------------------------------
+	;	Discard blank spaces, empty lines and comments
+	;------------------------------------------------------------------------------------------
+	
+\NextCharNoArg:
+	moveq.l	#1,d2					; Increment of argc when an arg is found
+\NextChar:	
+	move.b	(a0)+,d0				; Read a char
+	beq.s	\EndOfParsing				; EOF
 	cmpi.b	#CONFIG_FILE_COMMENT,d0			; Comment
-	beq.s	\SkipLine
-	cmpi.b	#SPACE,d0				; Space
-	beq.s	\NextChar
-	cmpi.b	#HTAB,d0				; Horizontal tab
-	beq.s	\NextChar
+	bne.s	\NoComment
+	
+\Comment:	move.b	(a0)+,d0			; Skip comment
+		beq.s	\EndOfParsing
+		cmpi.b	#EOL,d0
+		bne.s	\Comment
+		bra.s	\NextLine
+		
+\NoComment:
 	cmpi.b	#EOL,d0					; EOL
-	beq.s	\LineLoop
+	beq.s	\NextLine
+	cmpi.b	#SPACE,d0				; Space
+	beq.s	\NextCharNoArg
+	cmpi.b	#HTAB,d0				; Horizontal tab
+	beq.s	\NextCharNoArg
 
 	;------------------------------------------------------------------------------------------
-	;	Something found, add it to the buffer
+	;	Something that should be an arg found, copy it in the buffer
 	;------------------------------------------------------------------------------------------
-
-	move.w	CONFIG_BUFFER_HD(fp),d0			; Handle
-	movea.l	a2,a0					; String to add
-	lea	StrConfigFileSeparator(pc),a1		; Separators which terminate a switch
-	bsr	container::AddString
-	adda.l	d0,a2					; Add the string size to a2
-	addq.l	#1,a2					; Skip terminal 0
-	bra.s	\NextChar				; And look for another switch
-
-\EndOfFileParsing:
-
-	;==========================================================================================
-	;
-	;	Parsing done, create the argv table
-	;
-	;==========================================================================================
-
+	
+	add.l	d2,d1					; Update argc
+	adda.l	d2,a2					; Update a2 to avoid overwriting the terminating byte of the previous arg
+							; !!! WARNING !!! This makes that the first byte of the buffer contains garbage, and musn't be used
+	moveq.l	#0,d2					; Won't update argc and a2 when parsing next char
+	move.b	d0,(a2)+				; Copy current char in the buffer
+	clr.b	(a2)					; Terminating null byte if there is no more char to copy
+	bra.s	\NextChar
 
 	;------------------------------------------------------------------------------------------
-	;	Add a first dummy entry to simulate the pointer to the program name in the argv table
+	;	Parsing terminated
+	;	Prepare the frame buffer of the argv table
 	;------------------------------------------------------------------------------------------
 
-	move.w	ARGV_BUFFER_HD(fp),d0			; Container handle
-	suba.l	a1,a1					; Just to be sure that the pointer is valid
-	bsr	container::AddEntry			; Add it
+\EndOfParsing:
+	lea	1(sp),a2				; a2 = first significant byte of the buffer. One is skipped due to the above warning
+	move.w	d1,d2					; d2 = argc
+	add.w	d1,d1					; d1 = argc * 4 = size of argv table
+	add.w	d1,d1
+	suba.l	d1,sp
+	movea.l	sp,a4					; a4 = argv**
+	lea	4(a4),a0				; argv[1]*: first arg
 
+	move.w	d2,d0					; argc
+	subq.l	#2,d0					; Counter to build the argv table: remove 1 for program name + 1 for counter
+	bmi.s	\NoArg					; Don't try to loop with counter < 0...
+	
 	;------------------------------------------------------------------------------------------
-	;	Add a first dummy entry to simulate the pointer to the program name in the argv table
-	;------------------------------------------------------------------------------------------
-
-\AddArgvEntry:
-	moveq.l	#0,d1					; Rank of the string we want in the config buffer
-	move.w	CONFIG_BUFFER_HD(fp),d0			; Config buffer handle
-	bsr	container::GetEntryPtr			; Get a pointer to the entry
-	move.l	a0,d0					; The entry exists ?
-	beq.s	\ArgvTableFilled			; No, nothing more to add
-	pea	(a0)					; Else push data
-	lea	(sp),a0					; Get a pointer to it
-	move.w	ARGV_BUFFER_HD(fp),d0			; Get argv buffer handle
-	bsr	container::AddEntry			; And add the pointer of the string
-	addq.l	#4,sp					; Pop pointer
-	bra.s	\AddArgvEntry				; And loop
-
-\ArgvTableFilled:
-
-
-
-					; At this moment, a2 points to a random character
-
-
-	; browse the config buffer
-	;	for (0; CfgBuffer.count() - 1;) {
-	;		ArgvBuffer.addEntry(getEntryPtr(CfgBuffer));
-	;	}
-
-
-	;------------------------------------------------------------------------------------------
-	;	To save memory, we don't wait program exit to free the buffers
+	;	Write the argv table
 	;------------------------------------------------------------------------------------------
 
-	move.w	CONFIG_BUFFER_HD(fp),d0
-	bsr	mem::Free				; Delete argv buffer
-	clr.w	CONFIG_BUFFER_HD(fp)			; Prevent the buffer to be deleted on exit
-
-	move.w	ARGV_BUFFER_HD(fp),d0
-	bsr	mem::Free				; Delete config buffer
-	clr.w	ARGV_BUFFER_HD(fp)			; Prevent the buffer to be deleted on exit
-
-	movem.l	(sp)+,a2
-\End:	rts
+\ArgvLoop:
+	move.l	a2,(a0)+				; Write argv[x]
+\SkipArg:
+	tst.b	(a2)+					; Skip current arg
+	bne.s	\SkipArg
+	dbf.w	d0,\ArgvLoop				; Until the end of the table
+\NoArg:
 
 	;------------------------------------------------------------------------------------------
-	;	Skip a line in the config file. a2 points just after the comment char
+	;	Prepare the "command line" parsing
 	;------------------------------------------------------------------------------------------
 
-\SkipLine:
-	move.b	(a2)+,d0				; Read next char
-	beq.s	\EndOfFileParsing			; EOL => no next line
-	cmpi.b	#EOL,d0					; EOL found?
-	bne.s	\SkipLine				; No, parse next char
-	bra	\LineLoop				; Else parse a new line
+	lea	CMDLINE(fp),a0
+	movea.l	a4,a1					; argv**
+	move.w	d2,d0					; argc
+	jsr	INIT_CMDLINE(fp)
+		
+	;------------------------------------------------------------------------------------------
+	;	Parse it and check return value
+	;------------------------------------------------------------------------------------------
 
+	pea	flags::FlagXan(pc)
+	pea	flags::FlagStrict(pc)
+	pea	ErrorInvalidInConfigFile(pc)		; Error handler if an arg without +/- is found
+	pea	CLIFlags(pc)				; Switch table
+	pea	(fp)					; data*
+	pea	CMDLINE(fp)				; CMDLINE*
+	jsr	PARSE_CMDLINE(fp)	
+	bsr	cli::CheckParsingReturnValue
 
-;==================================================================================================
-;
-;	Config buffer containers data
-;
-;==================================================================================================
+	;------------------------------------------------------------------------------------------
+	;	Restore stack and registers
+	;------------------------------------------------------------------------------------------
 
-\ConfigBufferData:
-	dc.w	50		; 50 entries
-	dc.w	1		; Of 1 byte (data are string)
-
-\ArgvBufferData:
-	dc.w	10		; 10 entries
-	dc.w	4		; table of pointer
+\End:	movea.l	a3,sp					; Restore stack pointer
+	movea.l	(sp)+,a3				; Restore registers
+	movea.l	(sp)+,a2
+	rts

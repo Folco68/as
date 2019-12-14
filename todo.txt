@@ -1,4 +1,5 @@
-- invalid args are handled as if they return a PDTLIB_STOP_PARSING value
 - when mem::Alloc is implemented, check if NeedRAM needs to save/restore registers
 - mem::Free can't remove handles archived by the swap handler
-- container::GetCount doesn't work with strings
+- implement --flags command
+- return values of the second CLI pass
+- write swap handler

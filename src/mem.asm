@@ -32,10 +32,10 @@ mem::Alloc:
 	bne.s	\AllocOk				; Ok, we can leave
 
 		;----------------------------------------------------------------------------------
-		;	First attempt failed, try to swap in data and retry to re-allocate
+		;	First attempt failed, try to swap in data and retry to allocate
 		;----------------------------------------------------------------------------------
 
-		bsr	mem::NeedRAM				; Else try to swap in data
+		bsr	mem::NeedRAM			; Else try to swap in data
 		ROMC	HeapAlloc			; And retry to allocate
 		tst.w	d0				; Test success
 		beq	ErrorMemory			; Throw an error if it failed
@@ -71,8 +71,9 @@ mem::Free:
 
 	movem.l	d0-d2/a0-a1,-(sp)
 	move.w	d0,-(sp)
+	beq.s	\No
 	ROMC	HeapFree
-	addq.l	#2,sp
+\No:	addq.l	#2,sp
 	movem.l	(sp)+,d0-d2/a0-a1
 	rts
 
@@ -83,8 +84,8 @@ mem::Free:
 ;
 ;	Reallocate a handle. Throw a fatal error if it fails
 ;
-;	input	d0.w	size
-;		d1.l	handle
+;	input	d0.l	size
+;		d1.w	handle
 ;		a6	frame pointer
 ;
 ;	output	nothing

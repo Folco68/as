@@ -14,6 +14,9 @@ PdtlibFunctionTable:
 	dc.w	PDTLIB_GET_NEXT_ARG
 	dc.w	PDTLIB_PARSE_CMDLINE
 	dc.w	PDTLIB_GET_FILE_PTR
+	dc.w	PDTLIB_CHECK_FILE_TYPE
+	dc.w	PDTLIB_REMOVE_CURRENT_ARG
+	dc.w	PDTLIB_GET_FILE_HANDLE
 	dc.w	-1				; End of table
 
 ;==================================================================================================
@@ -30,6 +33,9 @@ PdtlibOffsetTable:
 	dc.w	GET_NEXT_ARG
 	dc.w	PARSE_CMDLINE
 	dc.w	GET_FILE_PTR
+	dc.w	CHECK_FILE_TYPE
+	dc.w	REMOVE_CURRENT_ARG
+	dc.w	GET_FILE_HANDLE
 
 ;==================================================================================================
 ;
