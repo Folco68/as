@@ -34,6 +34,14 @@ cli::ParseCommands:
 	lea	9*4(sp),sp			; Pop args
 
 	;------------------------------------------------------------------------------------------
+	;	Special handling of this error for the first pass:
+	;	we just ignore the unknown switches, they will be parsed during the second pass
+	;------------------------------------------------------------------------------------------
+
+	cmpi.w	#PDTLIB_SWITCH_NOT_FOUND,d0
+	beq.s	cli::ParseCommands
+	
+	;------------------------------------------------------------------------------------------
 	;
 	;	!!! WARNING !!!
 	;	This code is used to handle the return value of config file parsing,
@@ -103,13 +111,13 @@ cli::ParseFiles:
 	pea	(fp)
 	pea	CMDLINE(fp)
 	jsr	PARSE_CMDLINE(fp)
+	lea	6*4(sp),sp
 	
 	;------------------------------------------------------------------------------------------
 	;	Return value check
 	;------------------------------------------------------------------------------------------
 
 	bsr.s	cli::CheckParsingReturnValue
-
 
 	;------------------------------------------------------------------------------------------
 	;	Assemble the last source, on hold but not assembled yet
@@ -283,7 +291,7 @@ DisplayFlags:
 
 RemoveCurrentArg:
 
-	lea	CMDLINE(fp),a0
-	jsr	REMOVE_CURRENT_ARG(fp)
-	subq.w	#1,ARGC(fp)
+	lea	CMDLINE(fp),a0			; Get CMDLINE pointer
+	jsr	REMOVE_CURRENT_ARG(fp)		; Remove current arg
+	subq.w	#1,ARGC(fp)			; And update our copy of ARGC, because we need to parse the CLI once again
 	rts

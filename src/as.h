@@ -65,7 +65,7 @@ ASSEMBLY_HD.sizeof	equ	4	;	Size of the assembly handle header
 ;
 ;==================================================================================================
 
-FILE.Hd			equ	0	; 2	Handle of the file
+FILE.Handle		equ	0	; 2	Handle of the file
 FILE.Type		equ	2	; 1	Type of the file
 FILE.Offset		equ	4	; 2	Offset where the file is currently read
 FILE.sizeof		equ	6	; 	Size of the structure
