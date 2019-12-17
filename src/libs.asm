@@ -17,6 +17,8 @@ PdtlibFunctionTable:
 	dc.w	PDTLIB_CHECK_FILE_TYPE
 	dc.w	PDTLIB_REMOVE_CURRENT_ARG
 	dc.w	PDTLIB_GET_FILE_HANDLE
+	dc.w	PDTLIB_UNARCHIVE_FILE
+	dc.w	PDTLIB_ARCHIVE_FILE
 	dc.w	-1				; End of table
 
 ;==================================================================================================
@@ -36,6 +38,8 @@ PdtlibOffsetTable:
 	dc.w	CHECK_FILE_TYPE
 	dc.w	REMOVE_CURRENT_ARG
 	dc.w	GET_FILE_HANDLE
+	dc.w	UNARCHIVE_FILE
+	dc.w	ARCHIVE_FILE
 
 ;==================================================================================================
 ;

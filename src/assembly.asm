@@ -75,11 +75,12 @@ assembly::AssembleBaseFile:
 	;------------------------------------------------------------------------------------------
 	;	Check if the file exists and is a text
 	;------------------------------------------------------------------------------------------
-
+	
 	move.l	d0,-(sp)					; Save filename ptr
 	movea.l	d0,a0						; Filename ptr
 	move.b	#TEXT_TAG,d2					; TIOS extension
 	jsr	CHECK_FILE_TYPE(fp)
+	movea.l	(sp),a0						; Get filename to print in case of error
 	tst.w	d0
 	bne	ErrorFileNotFound				; Throw the same error for file not found/wrong file type
 
@@ -96,20 +97,36 @@ assembly::AssembleBaseFile:
 	;	Set up the file in the file list handle
 	;------------------------------------------------------------------------------------------
 
-	movea.l	(sp)+,a0					; Read filename
+	movea.l	(sp),a0						; Read filename
 	jsr	GET_FILE_HANDLE(fp)				; And get its handle
 	move.w	d0,FILE.Handle(a1)				; Set handle
 	move.w	#FILE_TYPE_BASE,FILE.Type(a1)			; Set type
 	move.w	#2+2,FILE.Offset(a1)				; Set offset: +2 for file size, +2 for AMS header
 		
-;	bra.s	AssembleCurrentFile
+	;------------------------------------------------------------------------------------------
+	;	Print a message
+	;------------------------------------------------------------------------------------------
+	
+	pea	StrAssemblingFile(pc)				; Filename already at (sp)
+	bsr	print::PrintToStdout
+	addq.l	#8,sp						; Remove string + filename
 
+	;------------------------------------------------------------------------------------------
+	;	Assemble the file, then remove it from the file list
+	;------------------------------------------------------------------------------------------
 
+	bsr.s	AssembleCurrentFile
+	
+	; TODO: create the object file
+	
+	rts
+	
+	
 ;==================================================================================================
 ;
 ;	AssembleCurrentFile
 ;
-;	Entry point of assembly of all files. Retrieve file data from FileList handle
+;	Entry point of assembly of all files. Assemble the last file of File List handle
 ;
 ;	input	a6	frame pointer
 ;

@@ -76,8 +76,9 @@ StrHelp:		dc.b	"Usage: as [commands/global opts] src1 [src1 opts] src2...",EOL
 			dc.b	"f, flags: print default flags of as",EOL
 			dc.b	"h, help: print this help",EOL
 			dc.b	"config <file>: specify a custom config file",EOL,0
-StrNoDefaultConfigFile:	dc.b	"Config file '%s' not found",EOL,0
+StrNoDefaultConfigFile:	dc.b	"Config file not found: %s",EOL,0
 StrParsingConfigFile:	dc.b	"Parsing config file: %s",EOL,0
+StrAssemblingFile:	dc.b	"Assembling file: %s",EOL,0
 
 
 ;==================================================================================================

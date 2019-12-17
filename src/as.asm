@@ -47,6 +47,8 @@
 	movea.l	sp,fp					; a6 is used as a global pointer in the whole program
 	move.w	4+STACK_FRAME_SIZE(sp),ARGC(fp)		; argc
 	move.l	6+STACK_FRAME_SIZE(sp),ARGV(fp)		; argv
+	RAMC	kernel_ROM_base				; Read ROM base ptr
+	move.l	a0,ROM_BASE(fp)				; Save it
 
 ;==================================================================================================
 ;
@@ -169,15 +171,6 @@
 	movea.l	ARGV(fp),a1
 	jsr	INIT_CMDLINE(fp)
 	bsr	cli::ParseFiles
-	
-	;------------------------------------------------------------------------------------------
-	;	The last source file must be assembled after CLI parsing
-	;------------------------------------------------------------------------------------------
-	
-	move.l	CURRENT_SRC_FILENAME_PTR(fp),d0
-	beq.s	\NoFileOnHold
-		bsr	assembly::AssembleBaseFile
-\NoFileOnHold:
 
 ;==================================================================================================
 ;
@@ -286,7 +279,9 @@ ErrorNoArgForConfig:
 	moveq.l	#ERROR_NO_ARG_FOR_CONFIG,d3
 	pea	StrErrorNoArgForConfig(pc)
 	bra.s	PrintError
+::::::::::::qsdfqsdf:
 
+	bra	::::::::::::qsdfqsdf
 	;------------------------------------------------------------------------------------------
 	;	The configuration file specified with --config was not found
 	;------------------------------------------------------------------------------------------
@@ -320,12 +315,12 @@ ErrorInvalidInConfigFile:
 	
 	;------------------------------------------------------------------------------------------
 	;	File not found (base file or included file)
-	;	in	d3.l	filename
+	;	filename is in a0
 	;------------------------------------------------------------------------------------------
 
 ErrorFileNotFound:
-	move.l	d3,-(sp)
 	moveq.l	#ERROR_FILE_NOT_FOUND,d3
+	pea	(a0)					; Filename
 	pea	StrErrorFileNotFound(pc)
 	bra.s	PrintError
 
@@ -336,12 +331,12 @@ ErrorFileNotFound:
 ;
 ;==================================================================================================
 
-	include "flags.asm"				; CLI/config flags
+	include "flags.asm"				; Config flags
 	include "cli.asm"				; Command line input parsing and callbacks
 	include "print.asm"				; Stdout/stderr printing
 	include "config.asm"				; Default/custom config file parsing
 	include "mem.asm"				; Heap and virtual memory management
 	include "asmhd.asm"				; Allocation/reallocation of handles used by the assembler parser
 	include "assembly.asm"				; Source parser and assembler engine
-	include "libs.asm"				; Contain only data, may be far from the executable code
+	include "libs.asm"				; Contain only data fpr the PedroM's libc and Pdtlib, may be far from the executable code
 	include "strings.asm"				; All strings. WARNING: size may be odd

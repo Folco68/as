@@ -40,7 +40,7 @@ cli::ParseCommands:
 
 	cmpi.w	#PDTLIB_SWITCH_NOT_FOUND,d0
 	beq.s	cli::ParseCommands
-	
+
 	;------------------------------------------------------------------------------------------
 	;
 	;	!!! WARNING !!!

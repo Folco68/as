@@ -15,9 +15,8 @@
 asmhd::AllocAssemblyHandles:
 
 	bsr.s	asmhd::FreeAssemblyHandles			; First, clear handles
-
 	lea	FILE_LIST_HD(fp),a0
-	moveq	#FILE_LIST.sizeof,d1				; Size of an entry
+	moveq.l	#FILE.sizeof,d1					; Size of an entry
 ;	bsr.s	AllocAssemblyHandle
 
 
@@ -37,9 +36,8 @@ asmhd::AllocAssemblyHandles:
 
 AllocAssemblyHandle:
 
-	pea	6						; Minimum size of a handle
+	moveq.l	#6,d0						; Minimum size of a handle
 	bsr	mem::Alloc
-	addq.l	#4,sp
 	move.w	d0,(a0)						; Save it
 	movea.w	d0,a0						; Read it
 	trap	#3						; Dereference it
@@ -110,7 +108,7 @@ asmhd::AddEntryToAssemblyHandle:
 	trap	#3						; Deref it
 	move.w	ASSEMBLY_HD.Count(a0),d0			; Current count of entries
 	addq.w	#1,d0						; Add the new one
-	mulu.w	#ASSEMBLY_HD.Size,d0				; Size of all entries
+	mulu.w	ASSEMBLY_HD.Size(a0),d0				; Size of all entries
 	addq.l	#ASSEMBLY_HD.sizeof,d0				; Add handle header
 	move.w	(a1),d1						; Read handle
 	bsr	mem::Realloc					; And reallocate it
@@ -145,4 +143,34 @@ asmhd::GetLastEntryPtr
 \Entry:	subq.w	#1,d0
 	mulu.w	ASSEMBLY_HD.Size(a0),d0
 	lea	ASSEMBLY_HD.sizeof(a0,d0.l),a0			; Pointer of the last entry
+	rts
+
+
+;==================================================================================================
+;
+;	asmhd::RemoveLastEntry
+;
+;	Remove the last entry of an assembly handle pointed to by a1.
+;	The handle may contain at least one element
+;
+;	input	a1	HANDLE*
+;
+;	output	nothing
+;
+;	destroy	a0/d0
+;
+;==================================================================================================
+
+asmhd::RemoveLastEntry:
+
+	movem.l	d0-d1/a0,-(sp)
+	movea.w	(a1),a0
+	trap	#3
+	subq.w	#1,ASSEMBLY_HD.Count(a0)
+	move.w	ASSEMBLY_HD.Count(a0),d0
+	mulu.w	ASSEMBLY_HD.Size(a0),d0
+	addq.l	#ASSEMBLY_HD.sizeof,d0
+	move.w	(a1),d1
+	bsr	mem::Realloc
+	movem.l	(sp)+,d0-d1/a0
 	rts

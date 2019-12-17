@@ -29,6 +29,8 @@ PDTLIB_\3	equ	$\1
 	pdtlib_export	0006,GetFilePtr,GET_FILE_PTR
 	pdtlib_export	0007,CheckFileType,CHECK_FILE_TYPE
 	pdtlib_export	000A,GetFileHandle,GET_FILE_HANDLE
+	pdtlib_export	000B,ArchiveFile,ARCHIVE_FILE
+	pdtlib_export	000C,UnarchiveFile,UNARCHIVE_FILE
 
 
 ;==================================================================================================
