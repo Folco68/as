@@ -17,7 +17,7 @@ CompilationFlags:	dc.l	FLAG_STRICT<<BIT_STRICT+FLAG_XAN<<BIT_XAN+FLAG_SWAP<<BIT_
 ;
 ;	input	d0.b	sign. May be #'+' or #'-'
 ;		d1	rank of the flag in the bitfield
-;		a6	frame pointer
+;		a0	frame pointer
 ;
 ;	output	nothing
 ;
@@ -32,7 +32,7 @@ flags::SetFlag:
 	;------------------------------------------------------------------------------------------
 
 	movem.l	d2/a0,-(sp)
-	movea.l	FLAGS_PTR(fp),a0
+	movea.l	FLAGS_PTR(a0),a0
 	move.l	(a0),d2
 
 	;------------------------------------------------------------------------------------------
@@ -44,6 +44,7 @@ flags::SetFlag:
 	beq.s	\Enabled
 		bclr.l	d1,d2
 \Enabled:
+	move.l	d2,(a0)
 	movem.l	(sp)+,d2/a0
 	rts
 
@@ -64,11 +65,8 @@ flags::SetFlag:
 ;==================================================================================================
 
 flags::FlagStrict:
-	pea	(a6)
-	movea.l	a0,a6
 	moveq.l	#BIT_STRICT,d1
-	bsr.s	flags::SetFlag
-	movea.l	(sp)+,a6
+Set:	bsr.s	flags::SetFlag
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0
 	rts
 
@@ -89,10 +87,5 @@ flags::FlagStrict:
 ;==================================================================================================
 
 flags::FlagXan:
-	pea	(a6)
-	movea.l	a0,a6
 	moveq.l	#BIT_XAN,d1
-	bsr.s	flags::SetFlag
-	movea.l	(sp)+,a6
-	moveq.l	#PDTLIB_CONTINUE_PARSING,d0
-	rts
+	bra.s	Set

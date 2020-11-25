@@ -1,10 +1,14 @@
 - when mem::Alloc is implemented, check if NeedRAM needs to save/restore registers
-- mem::Free can't remove handles archived by the swap handler
 - implement --flags command
 - write swap handler
 - written / reallocated handles must be swapped out before reallocation
 - add source files to swapable files
 - test asmhd::RemoveLastEntry
 - release memory on exit
-- test SWAP_OUT macro
+- test SWAP_OUT macro (mem.asm)
 - test Hd2FullName (mem.asm)
+- check that included files are added to the swapable files through AddToSwapableFileHd
+- SWAP_OUT macro is too big? Should turn some part or the whole macro into a function ?
+- write consistency checks at the end of a file parsing (macro refcount, etc)
+- use asmhd::AddEntryToAssemblyHandle in mem::AddToSwapableFileHd to avoid manual reallocation
+- NeedRAM() could return true if some data have been swapped in, it would allow fine-tuned swaping

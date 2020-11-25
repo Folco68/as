@@ -3,6 +3,7 @@
 	include "tios.h"
 	include "romcalls.h"
 	include "as.h"
+	include "asmhd.h"
 	include "config.h"
 	include "error.h"
 	include "flags.h"
@@ -19,7 +20,6 @@
 	DEFINE	_main					; Program entry point
 	DEFINE	_flag_2					; Don't redraw screen
 	DEFINE	_flag_3					; Binary is read-only
-
 
 ;==================================================================================================
 ;
@@ -39,7 +39,8 @@
 
 ;==================================================================================================
 ;
-;	Create the stack frame, and begin to populate it
+;	Create the stack frame, and begin to populate it (full initialization is below)
+;	Only argc/argv are initialized, because we don't pop the stack, so they will become hard to access
 ;
 ;==================================================================================================
 
@@ -47,8 +48,6 @@
 	movea.l	sp,fp					; a6 is used as a global pointer in the whole program
 	move.w	4+STACK_FRAME_SIZE(sp),ARGC(fp)		; argc
 	move.l	6+STACK_FRAME_SIZE(sp),ARGV(fp)		; argv
-	RAMC	kernel_ROM_base				; Read ROM base ptr
-	move.l	a0,ROM_BASE(fp)				; Save it
 
 ;==================================================================================================
 ;
@@ -133,6 +132,10 @@
 	clr.l	CUSTOM_CONFIG_FILENAME_PTR(fp)		; Default: no custom config file
 	clr.l	CURRENT_SRC_FILENAME_PTR(fp)		; Default: no source to assemble
 	clr.w	FILE_LIST_HD(fp)			; Handle containing the list of the currently assembled files
+	RAMC	kernel_ROM_base				; Read ROM base ptr
+	move.l	a0,ROM_BASE(fp)				; Save it
+	clr.w	SWAPABLE_FILE_HD(fp)			; Handle containing the handles of the Base files which can be swapped in
+	clr.w	SYMBOL_LIST_HD(fp)			; Handle containing the table of symbols found in the current source
 
 ;==================================================================================================
 ;
@@ -165,7 +168,7 @@
 	;------------------------------------------------------------------------------------------
 	;	Second pass
 	;------------------------------------------------------------------------------------------
-	
+
 	lea	CMDLINE(fp),a0
 	move.w	ARGC(fp),d0
 	movea.l	ARGV(fp),a1
@@ -279,9 +282,7 @@ ErrorNoArgForConfig:
 	moveq.l	#ERROR_NO_ARG_FOR_CONFIG,d3
 	pea	StrErrorNoArgForConfig(pc)
 	bra.s	PrintError
-::::::::::::qsdfqsdf:
 
-	bra	::::::::::::qsdfqsdf
 	;------------------------------------------------------------------------------------------
 	;	The configuration file specified with --config was not found
 	;------------------------------------------------------------------------------------------
@@ -300,19 +301,19 @@ ErrorMemory:
 	moveq.l	#ERROR_MEMORY,d3
 	pea	StrErrorMemory(pc)
 	bra.s	PrintError
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Something without +/- found in the config file
 	;------------------------------------------------------------------------------------------
 
 ErrorInvalidInConfigFile:
 	moveq.l	#ERROR_INVALID_ARG_IN_CONFIG_FILE,d3
-	lea	CMDLINE(pc),a0
+	lea	CMDLINE(fp),a0
 	jsr	GET_CURRENT_ARG(fp)
 	pea	(a0)
 	pea	StrErrorInvalidInConfigFile(pc)
 	bra.s	PrintError
-	
+
 	;------------------------------------------------------------------------------------------
 	;	File not found (base file or included file)
 	;	filename is in a0
@@ -322,6 +323,18 @@ ErrorFileNotFound:
 	moveq.l	#ERROR_FILE_NOT_FOUND,d3
 	pea	(a0)					; Filename
 	pea	StrErrorFileNotFound(pc)
+	bra.s	PrintError
+
+	;------------------------------------------------------------------------------------------
+	;	Invalid character in a symbol
+	;------------------------------------------------------------------------------------------
+
+ErrorInvalidSymbolName:
+	bsr	assembly::SaveFileData
+	bsr	print::PrintSourceContext
+
+	moveq.l	#ERROR_INVALID_SYMBOL,d3
+	pea	StrErrorInvalidSymbolName(pc)
 	bra.s	PrintError
 
 

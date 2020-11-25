@@ -36,8 +36,8 @@ config::ParseConfigFile:
 	move.b	(a0)+,(a1)+				; Copy the system directory in the buffer
 	bne.s	\SysDir
 	move.b	#'\',-1(a1)				; Override the terminal 0 with the path separator
-	movea.l	ARGV(fp),a0				; **Program name
-	movea.l	(a0),a0					; *Program name
+	movea.l	ARGV(fp),a0				; Program name**
+	movea.l	(a0),a0					; Program name*
 \ProgName:
 	move.b	(a0)+,(a1)+				; Copy the program name
 	bne.s	\ProgName
@@ -99,8 +99,9 @@ config::ParseConfigFile:
 
 	movea.l	a2,a0					; Filename
 	jsr	GET_FILE_PTR(fp)			; Get a ptr to data file
-	moveq.l	#0,d0					; Clear d0 (for config files > 32767 bytes! :D)
-	move.w	(a0),d0					; Read file size
+	moveq.l	#1,d0					; Clear upper word, and set size at 1 byte, to even it after adding real size
+	add.w	(a0),d0					; Add file size
+	andi.b	#$FE,d0					; Make it even
 	suba.l	d0,sp					; Create a buffer to put the args parsed in the file
 	movea.l	sp,a2					; First byte of the buffer
 	addq.l	#4,a0					; Skip size + TIOS header
@@ -178,7 +179,7 @@ config::ParseConfigFile:
 \SkipArg:
 	tst.b	(a2)+					; Skip current arg
 	bne.s	\SkipArg
-	dbf.w	d0,\ArgvLoop				; Until the end of the table
+	dbra.w	d0,\ArgvLoop				; Until the end of the table
 \NoArg:
 
 	;------------------------------------------------------------------------------------------

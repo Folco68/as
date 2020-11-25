@@ -1,7 +1,6 @@
 Memory management
 -----------------
 
-NeedRAM() could return true if some data have been swapped in, it would allow fine-tuned swaping
 
 
 Build process

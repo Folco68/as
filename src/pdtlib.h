@@ -41,8 +41,8 @@ PDTLIB_\3	equ	$\1
 PDTLIB_CMDLINE.SIZEOF		equ	8
 
 ; Return values of CLI callbacks
-PDTLIB_CONTINUE_PARSING		equ	0
-PDTLIB_STOP_PARSING		equ	1
+PDTLIB_CONTINUE_PARSING		equ	0	; Warning: hardcoded value in source!
+PDTLIB_STOP_PARSING		equ	1	; Warning: hardcoded value in source!
 
 ; Return values of ParseCmdline
 PDTLIB_END_OF_PARSING		equ	0

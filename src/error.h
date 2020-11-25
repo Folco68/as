@@ -20,3 +20,4 @@ ERROR_CONFIG_FILE_NOT_FOUND		equ	10	; The config file specified in the command l
 ERROR_MEMORY				equ	11	; Not enough memory to (re)alloc
 ERROR_INVALID_ARG_IN_CONFIG_FILE	equ	12	; Something without +/- found in the config file
 ERROR_FILE_NOT_FOUND			equ	13	; Source file not found (CLI or inclusion)
+ERROR_INVALID_SYMBOL			equ	14	; Invalid character found in a symbol

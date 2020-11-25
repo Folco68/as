@@ -1051,7 +1051,7 @@ kernel::Ptr2Hd		equ	_RAM_CALL_017
 kernel::Hd2Sym		equ	_RAM_CALL_018
 kernel::LibsBegin	equ	_RAM_CALL_019
 kernel::LibsEnd		equ	_RAM_CALL_01A
-kernel::LibsCall	equ	_RAM_CALL_01B
+kernel::LibsCall	equ	_RAM_CALL_01B	
 kernel::LibsPtr		equ	_RAM_CALL_01C
 kernel::LibsExec	equ	_RAM_CALL_01D
 kernel::HdKeep		equ	_RAM_CALL_01E

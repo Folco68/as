@@ -1,3 +1,5 @@
+; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+
 ;==================================================================================================
 ;
 ;	asmhd::AllocAssemblyHandles
@@ -15,8 +17,13 @@
 asmhd::AllocAssemblyHandles:
 
 	bsr.s	asmhd::FreeAssemblyHandles			; First, clear handles
-	lea	FILE_LIST_HD(fp),a0
-	moveq.l	#FILE.sizeof,d1					; Size of an entry
+
+	lea	FILE_LIST_HD(fp),a0				; File list
+	moveq.l	#FILE.sizeof,d1
+	bsr.s	AllocAssemblyHandle
+
+	lea	SYMBOL_LIST_HD(fp),a0				; Symbol list
+	moveq.l	#SYMBOL.sizeof,d1
 ;	bsr.s	AllocAssemblyHandle
 
 
@@ -61,8 +68,11 @@ AllocAssemblyHandle:
 ;==================================================================================================
 
 asmhd::FreeAssemblyHandles:
-	
+
 	lea	FILE_LIST_HD(fp),a0
+	bsr.s	FreeAssemblyHandle
+
+	lea	SYMBOL_LIST_HD(fp),a0
 ;	bsr.s	FreeAssemblyHandle
 
 

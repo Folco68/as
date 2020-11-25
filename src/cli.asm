@@ -57,7 +57,7 @@ cli::CheckParsingReturnValue:
 
 	cmpi.w	#PDTLIB_END_OF_PARSING,d0
 	bne.s	\Error
-		rts		
+		rts
 \Error:
 
 	;------------------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ cli::CheckParsingReturnValue:
 	cmpi.w	#PDTLIB_INVALID_RETURN_VALUE,d1	; Invalid return value. If it happens, a callback is buggy
 	beq	ErrorInvalidReturnValue
 
-	cmpi.w	#PDTLIB_STOPPED_BY_CALLBACK,d1	; A callback stopped the parsing. It must never happen
+	cmpi.w	#PDTLIB_STOPPED_BY_CALLBACK,d1	; A callback stopped the parsing. It should never happen
 	beq	ErrorStoppedByCallback
 
 	bra	ErrorUnhandledPdtlibReturnValue	; Catchall: any other value is unknown
@@ -112,7 +112,7 @@ cli::ParseFiles:
 	pea	CMDLINE(fp)
 	jsr	PARSE_CMDLINE(fp)
 	lea	6*4(sp),sp
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Return value check
 	;------------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ cli::ParseFiles:
 	;------------------------------------------------------------------------------------------
 	;	Assemble the last source, on hold but not assembled yet
 	;------------------------------------------------------------------------------------------
-	
+
 	move.l	CURRENT_SRC_FILENAME_PTR(fp),d0
 	bne	assembly::AssembleBaseFile
 	rts
@@ -135,7 +135,7 @@ cli::ParseFiles:
 ;	These callbaks are called by Pdtlib while parsing the command line
 ;
 ;	input	d0.b	sign. May be #'+' or #'-'
-;		a0	(void*)
+;		a0	(void*) 			Frame pointer
 ;
 ;	output	d0.w	PDTLIB_CONTINUE_PARSING		Pdtlib must continue the parsing of the CLI
 ;			PDTLIB_STOP_PARSING		Pdtlib must stop the parsing of the CLI
@@ -156,13 +156,15 @@ DisplayVersion:
 	;	Print the help text
 	;------------------------------------------------------------------------------------------
 
-	pea	(fp)				; Save frame pointer
-	movea.l	a0,fp				; Set the new one
 	pea	StrVersion(pc)			; Version text
 	bsr	print::PrintToStdout		; Print it
 	addq.l	#4,sp				; Pop text
-	bsr	RemoveCurrentArg		; Remove this command from the command line
-	movea.l	(sp)+,fp			; Restore frame pointer
+
+	;------------------------------------------------------------------------------------------
+	;	Remove command from cmdline and return
+	;------------------------------------------------------------------------------------------
+
+	bsr.s	RemoveCurrentArg		; Remove this command from the command line
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
@@ -181,7 +183,6 @@ SetConfigFile:
 
 	pea	(fp)
 	movea.l	a0,fp
-	bsr	RemoveCurrentArg		; Remove this command from the command line
 
 	;------------------------------------------------------------------------------------------
 	;	Get the next argument if one exists
@@ -191,15 +192,18 @@ SetConfigFile:
 	jsr	GET_NEXT_ARG(fp)
 	move.l	a0,d0				; Is an arg available?
 	beq	ErrorNoArgForConfig		; No...
+		move.l	a0,CUSTOM_CONFIG_FILENAME_PTR(fp)
+		movea.l	(sp)+,fp		; Restore fp
+		movea.l	fp,a0			; RemoveCurrentArg needs fp in a0 too
 
 	;------------------------------------------------------------------------------------------
-	;	Save the pointer of the filename, without additional check
+	;	Remove command + filename from cmdline and return
 	;------------------------------------------------------------------------------------------
-	
-	bsr	RemoveCurrentArg		; Remove this command from the command line
-	move.l	a0,CUSTOM_CONFIG_FILENAME_PTR(fp)
+
+	bsr.s	RemoveCurrentArg		; Remove filename
+	movea.l	fp,a0				; Need fp in a0 once again
+	bsr.s	RemoveCurrentArg		; Remove command
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
-\Error:	movea.l	(sp)+,fp			; Restore org frame pointer
 	rts
 
 
@@ -210,13 +214,6 @@ SetConfigFile:
 ;==================================================================================================
 
 EnableSwap:
-
-	;------------------------------------------------------------------------------------------
-	;	Save the current frame pointer to set up the one given by Pdtlib
-	;------------------------------------------------------------------------------------------
-
-	pea	(fp)
-	movea.l	a0,fp
 
 	;------------------------------------------------------------------------------------------
 	;	Set the flag according to the sign
@@ -237,11 +234,10 @@ EnableSwap:
 \NoWarning:
 
 	;------------------------------------------------------------------------------------------
-	;	Restore a6, set the return value and quit
+	;	Remove command from cmdline and return
 	;------------------------------------------------------------------------------------------
 
-	bsr	RemoveCurrentArg		; Remove this command from the command line
-	movea.l	(sp)+,fp
+	bsr.s	RemoveCurrentArg		; Remove this command from the command line
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
@@ -257,7 +253,12 @@ DisplayHelp:
 	pea	StrHelp(pc)
 	bsr	print::PrintToStdout
 	addq.l	#4,sp
-	bsr	RemoveCurrentArg		; Remove this command from the command line
+
+	;------------------------------------------------------------------------------------------
+	;	Remove command from cmdline and return
+	;------------------------------------------------------------------------------------------
+
+	bsr.s	RemoveCurrentArg		; Remove this command from the command line
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
@@ -270,7 +271,13 @@ DisplayHelp:
 
 DisplayFlags:
 
-	bsr	RemoveCurrentArg		; Remove this command from the command line
+	nop
+
+	;------------------------------------------------------------------------------------------
+	;	Remove command from cmdline and return
+	;------------------------------------------------------------------------------------------
+
+	bsr.s	RemoveCurrentArg		; Remove this command from the command line
 	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
@@ -281,17 +288,19 @@ DisplayFlags:
 ;
 ;	Remove the current argument from the argv structure. Adjust argc
 ;
-;	input	fp	frame pointer
+;	input	a0	frame pointer
 ;
 ;	output	d0 = 0 if there is no arg to remove (end of command line reached)
 ;
-;	destroy	d0/a
+;	destroy	d0/a0
 ;
 ;==================================================================================================
 
 RemoveCurrentArg:
 
-	lea	CMDLINE(fp),a0			; Get CMDLINE pointer
-	jsr	REMOVE_CURRENT_ARG(fp)		; Remove current arg
-	subq.w	#1,ARGC(fp)			; And update our copy of ARGC, because we need to parse the CLI once again
+	pea	(fp)
+	movea.l	a0,fp
+	lea	CMDLINE(fp),a0
+	jsr	REMOVE_CURRENT_ARG(fp)
+	movea.l	(sp)+,fp
 	rts

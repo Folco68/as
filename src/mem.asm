@@ -6,64 +6,60 @@
 ;
 ;	Macro allowing to ensure that a handle is not archived before reallocation or writing
 ;
-;	input	any reg		handle to swap out. Can't be a0
+;	input	any reg		handle to swap out
 ;		fp		frame pointer
 ;
 ;	output	nothing
 ;
-;	destroy	a0
+;	destroy	nothing
 ;
 ;==================================================================================================
 
 SWAP_OUT	macro
-
-	;------------------------------------------------------------------------------------------
-	;	Check fi the file is in RAM or in flash
-	;------------------------------------------------------------------------------------------
-
+	pea	(a0)
 	movea.w	\1,a0
 	trap	#3					; Dereference
 	cmpa.l	ROM_BASE(fp),a0				; Is it in flash ?
 	bcs.s	\\@AlreadyInRAM				; No, so nothing to do
-	
-		;------------------------------------------------------------------------------------------
-		;	If the file is in flash, unarchive it
-		;------------------------------------------------------------------------------------------
-
-		movem.l	d0-d2/a1,-(sp)			; Save std regs
-		move.w	\1,d0				; Read handle
-		lea	-(8+1+8+1)(sp),sp		; Buffer to store the filename
-		bsr	Hd2FullName			; Get its filename
-		movea.l	sp,a0				; Buffer ptr
-		jsr	UNARCHIVE_FILE(fp)		; Unarchive the file
-		tst.w	d0				; Check for success
-		beq	ErrorMemory			; Fail -> memory error
-		lea	8+1+8+1(sp),sp			; Pop buffer
-		movem.l	(sp)+,d0-d2/a1			; Else restore std regs
-	
+		bsr	mem::SwapOut
 \\@AlreadyInRAM:
+	movea.l	(sp)+,a0
 		endm
 
+	;------------------------------------------------------------------------------------------
+	;	Function called by the macro if the file is in flash
+	;------------------------------------------------------------------------------------------
+
+mem::SwapOut:
+	movem.l	d0-d2/a1,-(sp)				; Save std regs
+	RAMC	kernel_Ptr2Hd				; Get handle in d0
+	bsr	mem::Hd2FullName			; Get its filename
+	lea	FILENAME_BUFFER(fp),a0			; Full name buffer
+	jsr	UNARCHIVE_FILE(fp)			; Unarchive the file
+	tst.w	d0					; Check for success
+	beq	ErrorMemory				; Fail -> memory error
+	movem.l	(sp)+,d0-d2/a1				; Else restore std regs
+	rts
 
 ;==================================================================================================
 ;
 ;	mem::Alloc
 ;
 ;	Alloc a memory block.
-;	If it fails, call the swap handler then try again
+;	If it fails, the function calls the swap handler then try again
 ;
 ;	input	d0.l	size to allocate
 ;		a6	frame pointer
 ;
 ;	output	d0.w	handle
 ;
-;	destroy	std
+;	destroy	d0
 ;
 ;==================================================================================================
 
 mem::Alloc:
 
-	movem.l	d0-d2/a0-a1,-(sp)			; Save regs
+	movem.l	d1-d2/a0-a1,-(sp)			; Save regs
 
 	;------------------------------------------------------------------------------------------
 	;	Push args twice, because we try to allocate twice
@@ -91,7 +87,7 @@ mem::Alloc:
 
 \AllocOk:
 	addq.l	#4,sp					; Pop the second arg
-	movem.l	(sp)+,d0-d2/a0-a1			; Restore registers
+	movem.l	(sp)+,d1-d2/a0-a1			; Restore registers
 	rts
 
 
@@ -117,6 +113,7 @@ mem::Free:
 	movem.l	d0-d2/a0-a1,-(sp)
 	move.w	d0,-(sp)
 	beq.s	\No
+	SWAP_OUT d0
 	ROMC	HeapFree
 \No:	addq.l	#2,sp
 	movem.l	(sp)+,d0-d2/a0-a1
@@ -143,7 +140,7 @@ mem::Realloc:
 
 	movem.l	d0-d2/a0-a1,-(sp)			; Save regs
 	SWAP_OUT	d1				; Swap out the handle in RAM if necessary
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Push args twice, because we try to re-allocate twice
 	;------------------------------------------------------------------------------------------
@@ -181,9 +178,6 @@ mem::Realloc:
 ;
 ;	mem::NeedRAM
 ;
-;	Alloc a memory block.
-;	If it fails, call the swap handler then try again
-;
 ;	input	d0.w	handle which musn't be swapped in (if we need RAM to realloc one)
 ;		a6	frame pointer
 ;
@@ -200,7 +194,7 @@ mem::NeedRAM:
 	btst.l	#BIT_SWAP,d0
 	beq.s	\NotAllowed
 
-	nop
+	nop					; TODO: move RAM data to flash
 
 \NotAllowed:
 	movem.l	(sp)+,d0-d2/a0-a1
@@ -209,20 +203,20 @@ mem::NeedRAM:
 
 ;==================================================================================================
 ;
-;	Hd2FullName
+;	mem::Hd2FullName
 ;
-;	Copy the full name (folder + filaneme) of a handle in a buffer located at 4(sp)
+;	Copy the full name (folder + filaneme) of a handle in a stack frame buffer (FILENAME_BUFFER)
 ;
 ;	input	d0.w	handle
 ;		a6	frame pointer
 ;
-;	output	4(a0) = 0 if the file couldn't be found
+;	output	Full name in FILENAME_BUFFER. In case of error, first byte of the buffer is 0
 ;
 ;	destroy	std
 ;
 ;==================================================================================================
 
-Hd2FullName:
+mem::Hd2FullName:
 
 	;------------------------------------------------------------------------------------------
 	;	Initialize VAT parsing
@@ -233,7 +227,7 @@ Hd2FullName:
 	clr.l	-(sp)					; No SYM_STR
 	ROMC	SymFindFirst				; Initialize
 	addq.l	#6,sp					; And pop args
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Look for the SYM_ENTRY containing our handle. Return 0 as the first byte of the buffer
 	;	if the file couldn't be found
@@ -243,19 +237,19 @@ Hd2FullName:
 	move.w	(sp),d0					; Read handle
 	cmp.w	12(a0),d0				; And compare it with the one of the current SYM_ENTRY
 	beq.s	\Found					; We got it!
-	ROMC	SymFindNext				; Else get the next SYM_ENTRY*
-	move.l	a0,d0					; And test it
-	bne.s	\Search					; Ok, one more to test
-	clr.b	2+4(a0)					; Else not found. +2: handle. +4: return address. Clear the first byte of the buffer
-	bra.s	\Fail
-	
+		ROMC	SymFindNext			; Else get the next SYM_ENTRY*
+		move.l	a0,d0				; And test it
+		bne.s	\Search				; Ok, one more to test
+			clr.b	FILENAME_BUFFER(fp)	; Else not found
+			bra.s	\Fail
+
 	;------------------------------------------------------------------------------------------
 	;	SYM_ENTRY found. Retrieve the name of the containing filder
 	;------------------------------------------------------------------------------------------
 
 \Found:	pea	(a0)					; Save SYM_ENTRY* of the handle
-	ROMC	SymFindFolderName
-	lea	4+2+4(sp),a1				; SYM_ENTRY* + handle + return address = buffer ptr
+	ROMC	SymFindFoldername
+	lea	FILENAME_BUFFER(fp),a1			; Buffer where we write the full filename
 
 	;------------------------------------------------------------------------------------------
 	;	Copy the folder name + path separator in the buffer
@@ -273,10 +267,104 @@ Hd2FullName:
 	movea.l	(sp)+,a0				; SYM_ENTRY*
 \File:	move.b	(a0)+,(a1)+
 	bne.s	\File
-		
+
 	;------------------------------------------------------------------------------------------
 	;	Pop the handle and quit
 	;------------------------------------------------------------------------------------------
 
 \Fail:	addq.l	#2,sp					; Pop handle
+	rts
+
+
+;==================================================================================================
+;
+;	mem::AddToSwapableFileHd
+;
+;	When a file is found in the CLI, it is put in this handle if:
+;	- swap is allowed
+;	- the file is in RAM
+;	No error if the file can't be swaped in
+;	Files of this list are swaped out on exit
+;
+;	input	a0	filename
+;		a6	frame pointer
+;
+;	output	nothing
+;
+;	destroy	nothing
+;
+;==================================================================================================
+
+mem::AddToSwapableFileHd:
+
+	movem.l	d0-d2/a0-a1,-(sp)
+
+	;------------------------------------------------------------------------------------------
+	;	Check if swap is allowed
+	;------------------------------------------------------------------------------------------
+
+	move.l	GLOBAL_FLAGS(fp),d0				; Read global flags
+	btst.l	#BIT_SWAP,d0					; Check if swap in is allowed
+	beq.s	\End						; Else, no need to create the list handle
+
+	;------------------------------------------------------------------------------------------
+	;	Check if the file is in RAM
+	;------------------------------------------------------------------------------------------
+
+	movea.l	3*4(sp),a0					; Read filename
+	jsr	GET_FILE_PTR(fp)				; And get a ptr to its data
+	cmpa.l	ROM_BASE(fp),a0					; Compare with ROM base
+	bcc.s	\End						; Don't add the file if it
+
+	;------------------------------------------------------------------------------------------
+	;	Add the file handle to the list
+	;------------------------------------------------------------------------------------------
+
+	move.w	SWAPABLE_FILE_HD(fp),d0
+	bne.s	\Initialized
+
+		;----------------------------------------------------------------------------------
+		;	Handle not initialized yet, let's do it
+		;----------------------------------------------------------------------------------
+
+		pea	6
+		ROMC	HeapAlloc
+		addq.l	#4,sp
+		move.w	d0,SWAPABLE_FILE_HD(fp)
+\Memory:	beq	ErrorMemory
+			movea.w	d0,a0
+			trap	#3
+			clr.w	(a0)				; No file registered yet
+
+	;------------------------------------------------------------------------------------------
+	;	Reallocate the handle
+	;------------------------------------------------------------------------------------------
+
+\Initialized:
+	movea.w	d0,a0						; Read handle
+	trap	#3						; Deref it
+	moveq.l	#1,d1						; Clear upper word. 1 is the count for one new file
+	add.w	(a0),d1						; Add number of registered files
+	add.l	d1,d1						; Table of handles
+	addq.l	#2,d1						; Header size
+	move.l	d1,-(sp)					; Push new
+	move.w	d0,-(sp)					; Push handle
+	ROMC	HeapRealloc					; Realloc it
+	addq.l	#6,sp						; Pop args
+	tst.w	d0						; And test success
+	beq.s	\Memory
+
+	;------------------------------------------------------------------------------------------
+	;	Update the hanle (count + file handle)
+	;------------------------------------------------------------------------------------------
+
+	movea.w	d0,a0						; Read handle
+	trap	#3						; Deref it
+	addq.w	#1,(a0)						; Update file count
+	move.w	(a0),d1						; Read count
+	add.w	d1,d1						; Table of handles
+	move.w	d0,0(a0,d1.w)					; Register new file
+
+
+\End:	movem.l	(sp)+,d0-d2/a0-a1
 	rts

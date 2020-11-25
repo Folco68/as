@@ -1,8 +1,35 @@
-CMP A,B         signed          unsigned
+CMP B,A         signed          unsigned
 -------         ------          --------
-A >  B           BLT             BLO/BCS
-A >= B           BLE             BLS
-A == B           BEQ             BEQ
-A != B           BNE             BNE
-A <  B           BGT             BHI
-A <= B           BGE             BHS/BCC
+A <  B          BLT/BMI           BCS
+A <= B          BLE               BLS
+A == B          BEQ               BEQ
+A != B          BNE               BNE
+A >  B          BGT               BHI
+A >= B          BGE/BPL           BCC
+
+TST A           signed          unsigned
+-------         ------          --------
+A <  0          BLT/BMI            -
+A <= 0          BLE                -
+A =  0          BEQ               BEQ
+A <> 0          BNE               BNE
+A >  0          BGT               BNE
+A >= 0          BGE/BPL            -
+
+----------------------------------------
+
+BCC  Branch Carry Clear      C == 0
+BCS  Branch Carry Set        C == 1
+BEQ  Branch EQual            Z == 1
+BNE  Branch Not Equal        Z == 0
+BGE  Branch Greater or Equal N == V
+BGT  Branch Greater Than     N == V && Z == 0
+BHI  Branch HIgher than      C == 0 && Z == 0
+BLE  Branch Less or Equal    N != V && Z == 1
+BLS  Branch Lower or Same    C == 1 || Z == 1
+BLT  Branch Less Than        N != V
+BMI  Branch MInus            N == 1
+BPL  Branch PLus             N == 0
+BVC  Branch V Clear          V == 0
+BVS  Branch V Set            V == 1
+BRA  BRanch Always
