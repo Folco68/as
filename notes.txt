@@ -42,7 +42,7 @@ Si (arg2 n'a pas d'opérateurs)
 ===========================================================================================================================
 
 Chiffres :
-$~0123456789abcdefABCDEF
+$%0123456789abcdefABCDEF
 
 Opérateurs unaires, à résoudre immédiatement :
 ~ -
@@ -52,7 +52,6 @@ Opérateurs, par ordre de priorité :
 
 Opérateur mettant un flag global :
 #
-
 
 IMM MainEval( EXPR )
 Si (EXPR n'a pas d'opétateur)
@@ -93,5 +92,5 @@ Si (arg2 n'a pas d'opérateur)
 
 
 arg1 est une valeur numérique
-arg2 est un pointeur la suite de l'expression
+arg2 est un pointeur sur la suite de l'expression
 OP est un tag

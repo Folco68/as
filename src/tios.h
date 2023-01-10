@@ -1,4 +1,4 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ; 'Kernel' include files
 	ifnd	_library
@@ -1051,7 +1051,7 @@ kernel::Ptr2Hd		equ	_RAM_CALL_017
 kernel::Hd2Sym		equ	_RAM_CALL_018
 kernel::LibsBegin	equ	_RAM_CALL_019
 kernel::LibsEnd		equ	_RAM_CALL_01A
-kernel::LibsCall	equ	_RAM_CALL_01B	
+kernel::LibsCall	equ	_RAM_CALL_01B
 kernel::LibsPtr		equ	_RAM_CALL_01C
 kernel::LibsExec	equ	_RAM_CALL_01D
 kernel::HdKeep		equ	_RAM_CALL_01E

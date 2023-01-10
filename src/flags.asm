@@ -1,4 +1,4 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ;==================================================================================================
 ;
@@ -15,7 +15,7 @@ CompilationFlags:	dc.l	FLAG_STRICT<<BIT_STRICT+FLAG_XAN<<BIT_XAN+FLAG_SWAP<<BIT_
 ;
 ;	Set a flag according to the given sign. The flag may be local or global
 ;
-;	input	d0.b	sign. May be #'+' or #'-'
+;	input	d0.b	sign. May be '+' or '-'
 ;		d1	rank of the flag in the bitfield
 ;		a0	frame pointer
 ;
@@ -36,7 +36,7 @@ flags::SetFlag:
 	move.l	(a0),d2
 
 	;------------------------------------------------------------------------------------------
-	;	Default: enable the flag. Else disable it if the sign is #'-', then quit
+	;	Default: enable the flag. Else disable it if the sign is '-', then quit
 	;------------------------------------------------------------------------------------------
 
 	bset.l	d1,d2
@@ -55,7 +55,7 @@ flags::SetFlag:
 ;
 ;	Callback for Pdtlib::ParseCmdline
 ;
-;	input	d0.b	sign. May be #'+' or #'-'
+;	input	d0.b	sign. May be '+' or '-'
 ;		a0	(void*)data (actually, frame pointer)
 ;
 ;	output	d0 = PDTLIB_CONTINUE_PARSING
@@ -65,9 +65,9 @@ flags::SetFlag:
 ;==================================================================================================
 
 flags::FlagStrict:
-	moveq.l	#BIT_STRICT,d1
+	moveq	#BIT_STRICT,d1
 Set:	bsr.s	flags::SetFlag
-	moveq.l	#PDTLIB_CONTINUE_PARSING,d0
+	moveq	#PDTLIB_CONTINUE_PARSING,d0
 	rts
 
 
@@ -77,7 +77,7 @@ Set:	bsr.s	flags::SetFlag
 ;
 ;	Callback for Pdtlib::ParseCmdline
 ;
-;	input	d0.b	sign. May be #'+' or #'-'
+;	input	d0.b	sign. May be '+' or '-'
 ;		a0	(void*)data (actually, frame pointer)
 ;
 ;	output	d0 = PDTLIB_CONTINUE_PARSING
@@ -87,5 +87,5 @@ Set:	bsr.s	flags::SetFlag
 ;==================================================================================================
 
 flags::FlagXan:
-	moveq.l	#BIT_XAN,d1
+	moveq	#BIT_XAN,d1
 	bra.s	Set

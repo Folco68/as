@@ -16,4 +16,4 @@ mv *.??z ../bin/
 rm -f *.o version.h 
 
 # Debug
-cp ../bin/as.9xz ../../VTI/
+cp ../bin/as.??z ../../VTI/

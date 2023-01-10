@@ -1,10 +1,10 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ;==================================================================================================
 ;
 ;	SWAP_OUT
 ;
-;	Macro allowing to ensure that a handle is not archived before reallocation or writing
+;	Macro ensuring that a handle is not archived before reallocation or writing
 ;
 ;	input	any reg		handle to swap out
 ;		fp		frame pointer
@@ -149,13 +149,13 @@ mem::Realloc:
 	move.w	d1,-(sp)				; And handle
 	move.l	d0,-(sp)				; Twice
 	move.w	d1,-(sp)
-	ROMC	HeapRealloc				; Realloc with pedrom::realloc, support size > 64 ko
+	ROMC	HeapRealloc
 	addq.l	#6,sp					; Pop args of the first call
 	tst.w	d0					; And test realloc result
 	bne.s	\ReallocOk
 
 		;----------------------------------------------------------------------------------
-		;	First attempt failed, try to swap in data and retry to re-allocate
+		;	First attempt failed, try to swap in data and try to re-allocate
 		;----------------------------------------------------------------------------------
 
 		move.w	(sp),d0				; We don't want to swap in this handle
@@ -314,7 +314,7 @@ mem::AddToSwapableFileHd:
 	movea.l	3*4(sp),a0					; Read filename
 	jsr	GET_FILE_PTR(fp)				; And get a ptr to its data
 	cmpa.l	ROM_BASE(fp),a0					; Compare with ROM base
-	bcc.s	\End						; Don't add the file if it
+	bcc.s	\End						; Don't add the file if it is already in ROM
 
 	;------------------------------------------------------------------------------------------
 	;	Add the file handle to the list
@@ -343,7 +343,7 @@ mem::AddToSwapableFileHd:
 \Initialized:
 	movea.w	d0,a0						; Read handle
 	trap	#3						; Deref it
-	moveq.l	#1,d1						; Clear upper word. 1 is the count for one new file
+	moveq	#1,d1						; Clear upper word. 1 is the count for one new file
 	add.w	(a0),d1						; Add number of registered files
 	add.l	d1,d1						; Table of handles
 	addq.l	#2,d1						; Header size
@@ -355,7 +355,7 @@ mem::AddToSwapableFileHd:
 	beq.s	\Memory
 
 	;------------------------------------------------------------------------------------------
-	;	Update the hanle (count + file handle)
+	;	Update the handle (count + file handle)
 	;------------------------------------------------------------------------------------------
 
 	movea.w	d0,a0						; Read handle

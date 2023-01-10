@@ -1,4 +1,4 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ;==================================================================================================
 ;
@@ -135,7 +135,7 @@ cli::ParseFiles:
 ;	These callbaks are called by Pdtlib while parsing the command line
 ;
 ;	input	d0.b	sign. May be #'+' or #'-'
-;		a0	(void*) 			Frame pointer
+;		a0	void*	 			Frame pointer
 ;
 ;	output	d0.w	PDTLIB_CONTINUE_PARSING		Pdtlib must continue the parsing of the CLI
 ;			PDTLIB_STOP_PARSING		Pdtlib must stop the parsing of the CLI
@@ -165,7 +165,7 @@ DisplayVersion:
 	;------------------------------------------------------------------------------------------
 
 	bsr.s	RemoveCurrentArg		; Remove this command from the command line
-	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
+	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
 
@@ -203,7 +203,7 @@ SetConfigFile:
 	bsr.s	RemoveCurrentArg		; Remove filename
 	movea.l	fp,a0				; Need fp in a0 once again
 	bsr.s	RemoveCurrentArg		; Remove command
-	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
+	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
 
@@ -219,7 +219,7 @@ EnableSwap:
 	;	Set the flag according to the sign
 	;------------------------------------------------------------------------------------------
 
-	moveq.l	#BIT_SWAP,d1			; Flag rank
+	moveq	#BIT_SWAP,d1			; Flag rank
 	bsr	flags::SetFlag			; The sign is already in d0
 
 	;------------------------------------------------------------------------------------------
@@ -238,7 +238,7 @@ EnableSwap:
 	;------------------------------------------------------------------------------------------
 
 	bsr.s	RemoveCurrentArg		; Remove this command from the command line
-	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
+	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
 
@@ -259,7 +259,7 @@ DisplayHelp:
 	;------------------------------------------------------------------------------------------
 
 	bsr.s	RemoveCurrentArg		; Remove this command from the command line
-	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
+	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
 
@@ -278,7 +278,7 @@ DisplayFlags:
 	;------------------------------------------------------------------------------------------
 
 	bsr.s	RemoveCurrentArg		; Remove this command from the command line
-	moveq.l	#PDTLIB_CONTINUE_PARSING,d0	; Return value
+	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
 

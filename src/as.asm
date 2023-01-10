@@ -1,4 +1,4 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 	include "tios.h"
 	include "romcalls.h"
@@ -8,6 +8,7 @@
 	include "error.h"
 	include "flags.h"
 	include "krnlramc.h"
+	include "opcodes.h"
 	include "pdtlib.h"
 	include "pdrmramc.h"
 	include "stckfrm.h"
@@ -17,9 +18,10 @@
 	xdef	_ti92plus
 	xdef	_v200
 
-	DEFINE	_main					; Program entry point
-	DEFINE	_flag_2					; Don't redraw screen
-	DEFINE	_flag_3					; Binary is read-only
+	DEFINE	_main		; Program entry point
+	DEFINE	_flag_2		; Don't redraw screen
+	DEFINE	_flag_3		; Binary is read-only
+	
 
 ;==================================================================================================
 ;
@@ -31,7 +33,7 @@
 	beq.s	\OSok
 \WrongOS:	pea	StrErrorWrongOS(pc)
 		ROMC	ST_helpMsg			; The libc is not loaded yet, we can't throw to stderr
-		moveq.l	#ERROR_BOOT,d0
+		moveq	#ERROR_BOOT,d0
 		RAMC	kernel_exit
 
 \OSok:	cmpi.w	#PEDROM_MINIMUM_VERSION,OS_VERSION	; We need at least PedroM 0.83 with a patched kernel::LibsExec
@@ -59,7 +61,7 @@
 	;	Args of pdtlib::InstallTrampolines
 	;------------------------------------------------------------------------------------------
 
-	moveq.l	#PDTLIB_VERSION,d1			; Version
+	moveq	#PDTLIB_VERSION,d1			; Version
 	lea	PdtlibFilename(pc),a0			; Lib name
 	lea	PdtlibFunctionTable(pc),a1		; Table of pdtlib functions
 	lea	PdtlibOffsetTable(pc),a2		; Table of trampolines offsets in the stack frame
@@ -77,10 +79,10 @@
 	;	Call and check
 	;------------------------------------------------------------------------------------------
 
-	RAMC	kernel_LibsExec				; Reloc and open Pdtlib
+	RAMC	kernel_LibsExec				; Reloc and open Pdtlib (twice, because pdtlib::InstallTrampolines will do the same)
 	tst.l	(sp)					; Test success
 	bne.s	\PdtlibOk
-		moveq.l	#ERROR_PDTLIB,d0		; Failed to load Pdtlib
+		moveq	#ERROR_PDTLIB,d0		; Failed to load Pdtlib
 		RAMC	kernel_exit			; So exit with an error code
 \PdtlibOk:
 	move.l	a0,PDTLIB_DESCRIPTOR(fp)		; Save descriptor
@@ -91,7 +93,7 @@
 ;
 ;==================================================================================================
 
-	moveq.l	#LIBC_VERSION,d1			; Version
+	moveq	#LIBC_VERSION,d1			; Version
 	lea	LibcFilename(pc),a0			; Libc name
 	lea	LibcFunctionTable(pc),a1		; Table of the libc functions
 	lea	LibcOffsetTable(pc),a2			; Table of trampolines offsets in the stack frame
@@ -106,7 +108,7 @@
 
 		movea.l	PDTLIB_DESCRIPTOR(fp),a0
 		RAMC	kernel_LibsEnd
-		moveq.l	#ERROR_LIBC,d0			; Error code
+		moveq	#ERROR_LIBC,d0			; Error code
 		RAMC	kernel_exit
 \LibcOk:
 
@@ -134,7 +136,7 @@
 	clr.w	FILE_LIST_HD(fp)			; Handle containing the list of the currently assembled files
 	RAMC	kernel_ROM_base				; Read ROM base ptr
 	move.l	a0,ROM_BASE(fp)				; Save it
-	clr.w	SWAPABLE_FILE_HD(fp)			; Handle containing the handles of the Base files which can be swapped in
+	clr.w	SWAPABLE_FILE_HD(fp)			; Handle containing the handles of the source files which can be swapped in
 	clr.w	SYMBOL_LIST_HD(fp)			; Handle containing the table of symbols found in the current source
 
 ;==================================================================================================
@@ -143,9 +145,7 @@
 ;
 ;	1. Parse the CLI, looking for commands, ignoring compilation flags and source files
 ;	2. Read the config file, if there is one to parse
-;	3. Parse the global compilation flags
-;	4. Get the first source file, read its flags, then assemble it
-;	5. Loop while a source file remains
+;	3. Parse the remaining elements of the CLI
 ;
 ;==================================================================================================
 
@@ -170,9 +170,7 @@
 	;------------------------------------------------------------------------------------------
 
 	lea	CMDLINE(fp),a0
-	move.w	ARGC(fp),d0
-	movea.l	ARGV(fp),a1
-	jsr	INIT_CMDLINE(fp)
+	jsr	RESET_CMDLINE(fp)
 	bsr	cli::ParseFiles
 
 ;==================================================================================================
@@ -182,11 +180,12 @@
 ;
 ;==================================================================================================
 
-	moveq.l	#ERROR_NO_ERROR,d3
+	moveq	#ERROR_NO_ERROR,d3			; Default: no error occured
 
 ExitError:
 
 	bsr	asmhd::FreeAssemblyHandles		; Clean handles used to assemble files
+	; TODO: SWAPABLE_FILE_HD should be freed? But how??
 
 	;------------------------------------------------------------------------------------------
 	;	Display an exit message indicating the error code contained by d3.w
@@ -233,7 +232,7 @@ PrintError:
 	;------------------------------------------------------------------------------------------
 
 ErrorInvalidSwitch:
-	moveq.l	#ERROR_INVALID_SWITCH,d3
+	moveq	#ERROR_INVALID_SWITCH,d3
 	pea	StrErrorInvalidSwitch(pc)
 	bra.s	PrintError
 
@@ -242,7 +241,7 @@ ErrorInvalidSwitch:
 	;------------------------------------------------------------------------------------------
 
 ErrorSwitchNotFound:
-	moveq.l	#ERROR_SWITCH_NOT_FOUND,d3
+	moveq	#ERROR_SWITCH_NOT_FOUND,d3
 	pea	StrErrorSwitchNotFound(pc)
 	bra.s	PrintError
 
@@ -251,7 +250,7 @@ ErrorSwitchNotFound:
 	;------------------------------------------------------------------------------------------
 
 ErrorInvalidReturnValue:
-	moveq.l	#ERROR_INVALID_RETURN_VALUE,d3
+	moveq	#ERROR_INVALID_RETURN_VALUE,d3
 	move.w	d1,-(sp)				; Return value
 	pea	StrErrorInvalidReturnValue(pc)
 	bra.s	PrintError
@@ -261,7 +260,7 @@ ErrorInvalidReturnValue:
 	;------------------------------------------------------------------------------------------
 
 ErrorStoppedByCallback:
-	moveq.l	#ERROR_STOPPED_BY_CALLBACK,d3
+	moveq	#ERROR_STOPPED_BY_CALLBACK,d3
 	pea	StrErrorStoppedByCallback(pc)
 	bra.s	PrintError
 
@@ -270,7 +269,7 @@ ErrorStoppedByCallback:
 	;------------------------------------------------------------------------------------------
 
 ErrorUnhandledPdtlibReturnValue:
-	moveq.l	#ERROR_UNHANDLED_PDTLIB_RETURN_VALUE,d3
+	moveq	#ERROR_UNHANDLED_PDTLIB_RETURN_VALUE,d3
 	pea	StrErrorUnhandledPdtlibReturnValue(pc)
 	bra.s	PrintError
 
@@ -279,7 +278,7 @@ ErrorUnhandledPdtlibReturnValue:
 	;------------------------------------------------------------------------------------------
 
 ErrorNoArgForConfig:
-	moveq.l	#ERROR_NO_ARG_FOR_CONFIG,d3
+	moveq	#ERROR_NO_ARG_FOR_CONFIG,d3
 	pea	StrErrorNoArgForConfig(pc)
 	bra.s	PrintError
 
@@ -288,7 +287,7 @@ ErrorNoArgForConfig:
 	;------------------------------------------------------------------------------------------
 
 ErrorConfigFileNotFound:
-	moveq.l	#ERROR_CONFIG_FILE_NOT_FOUND,d3
+	moveq	#ERROR_CONFIG_FILE_NOT_FOUND,d3
 	move.l	CUSTOM_CONFIG_FILENAME_PTR(fp),-(sp)
 	pea	StrErrorConfigFilenameNotFound(pc)
 	bra.s	PrintError
@@ -298,7 +297,7 @@ ErrorConfigFileNotFound:
 	;------------------------------------------------------------------------------------------
 
 ErrorMemory:
-	moveq.l	#ERROR_MEMORY,d3
+	moveq	#ERROR_MEMORY,d3
 	pea	StrErrorMemory(pc)
 	bra.s	PrintError
 
@@ -307,7 +306,7 @@ ErrorMemory:
 	;------------------------------------------------------------------------------------------
 
 ErrorInvalidInConfigFile:
-	moveq.l	#ERROR_INVALID_ARG_IN_CONFIG_FILE,d3
+	moveq	#ERROR_INVALID_ARG_IN_CONFIG_FILE,d3
 	lea	CMDLINE(fp),a0
 	jsr	GET_CURRENT_ARG(fp)
 	pea	(a0)
@@ -320,7 +319,7 @@ ErrorInvalidInConfigFile:
 	;------------------------------------------------------------------------------------------
 
 ErrorFileNotFound:
-	moveq.l	#ERROR_FILE_NOT_FOUND,d3
+	moveq	#ERROR_FILE_NOT_FOUND,d3
 	pea	(a0)					; Filename
 	pea	StrErrorFileNotFound(pc)
 	bra.s	PrintError
@@ -333,7 +332,7 @@ ErrorInvalidSymbolName:
 	bsr	assembly::SaveFileData
 	bsr	print::PrintSourceContext
 
-	moveq.l	#ERROR_INVALID_SYMBOL,d3
+	moveq	#ERROR_INVALID_SYMBOL,d3
 	pea	StrErrorInvalidSymbolName(pc)
 	bra.s	PrintError
 
@@ -345,11 +344,12 @@ ErrorInvalidSymbolName:
 ;==================================================================================================
 
 	include "flags.asm"				; Config flags
-	include "cli.asm"				; Command line input parsing and callbacks
+	include "cli.asm"				; Parsing and callbacks of command line parsing
 	include "print.asm"				; Stdout/stderr printing
 	include "config.asm"				; Default/custom config file parsing
 	include "mem.asm"				; Heap and virtual memory management
 	include "asmhd.asm"				; Allocation/reallocation of handles used by the assembler parser
 	include "assembly.asm"				; Source parser and assembler engine
-	include "libs.asm"				; Contain only data fpr the PedroM's libc and Pdtlib, may be far from the executable code
+	include "libs.asm"				; Contain only data for the PedroM's libc and Pdtlib, may be far from the executable code
+	include "opcodes.asm"				; Contain opcode description + macros
 	include "strings.asm"				; All strings. WARNING: size may be odd

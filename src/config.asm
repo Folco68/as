@@ -1,4 +1,4 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ;==================================================================================================
 ;
@@ -23,7 +23,7 @@ config::ParseConfigFile:
 	;------------------------------------------------------------------------------------------
 	;	Copy the custom filename in the buffer if one is specified
 	;------------------------------------------------------------------------------------------
-	move.l	CUSTOM_CONFIG_FILENAME_PTR(fp),d0		; Check if we have to use the default filename
+	move.l	CUSTOM_CONFIG_FILENAME_PTR(fp),d0	; Check if we have to use the default filename
 	bne.s	\CustomConfigFile
 
 	;------------------------------------------------------------------------------------------
@@ -53,9 +53,9 @@ config::ParseConfigFile:
 	pea	(a2)
 	movea.l	d0,a2					; a2 = filename ptr
 	movea.l	sp,a3					; Save sp to restore it after file parsing
-	
+
 	movea.l	d0,a0					; Arg of pdtlib::CheckFileType
-	moveq.l	#$FFFFFFE0,d2				; We look for a text
+	moveq	#$FFFFFFE0,d2				; We look for a text
 	jsr	CHECK_FILE_TYPE(fp)
 	tst.w	d0
 	beq.s	\FileFound
@@ -99,13 +99,13 @@ config::ParseConfigFile:
 
 	movea.l	a2,a0					; Filename
 	jsr	GET_FILE_PTR(fp)			; Get a ptr to data file
-	moveq.l	#1,d0					; Clear upper word, and set size at 1 byte, to even it after adding real size
+	moveq	#1,d0					; Clear upper word, and set size at 1 byte, to even it after adding real size
 	add.w	(a0),d0					; Add file size
 	andi.b	#$FE,d0					; Make it even
 	suba.l	d0,sp					; Create a buffer to put the args parsed in the file
 	movea.l	sp,a2					; First byte of the buffer
 	addq.l	#4,a0					; Skip size + TIOS header
-	moveq.l	#1,d1					; argc. Initialized with 1 to emulate program name entry
+	moveq	#1,d1					; argc. Initialized with 1 to emulate program name entry
 
 	;------------------------------------------------------------------------------------------
 	;	File parsing and copying
@@ -117,21 +117,21 @@ config::ParseConfigFile:
 	;------------------------------------------------------------------------------------------
 	;	Discard blank spaces, empty lines and comments
 	;------------------------------------------------------------------------------------------
-	
+
 \NextCharNoArg:
-	moveq.l	#1,d2					; Increment of argc when an arg is found
-\NextChar:	
+	moveq	#1,d2					; Increment of argc when an arg is found
+\NextChar:
 	move.b	(a0)+,d0				; Read a char
 	beq.s	\EndOfParsing				; EOF
 	cmpi.b	#CONFIG_FILE_COMMENT,d0			; Comment
 	bne.s	\NoComment
-	
+
 \Comment:	move.b	(a0)+,d0			; Skip comment
 		beq.s	\EndOfParsing
 		cmpi.b	#EOL,d0
 		bne.s	\Comment
 		bra.s	\NextLine
-		
+
 \NoComment:
 	cmpi.b	#EOL,d0					; EOL
 	beq.s	\NextLine
@@ -143,11 +143,11 @@ config::ParseConfigFile:
 	;------------------------------------------------------------------------------------------
 	;	Something that should be an arg found, copy it in the buffer
 	;------------------------------------------------------------------------------------------
-	
+
 	add.l	d2,d1					; Update argc
 	adda.l	d2,a2					; Update a2 to avoid overwriting the terminating byte of the previous arg
 							; !!! WARNING !!! This makes that the first byte of the buffer contains garbage, and musn't be used
-	moveq.l	#0,d2					; Won't update argc and a2 when parsing next char
+	moveq	#0,d2					; Won't update argc and a2 when parsing next char
 	move.b	d0,(a2)+				; Copy current char in the buffer
 	clr.b	(a2)					; Terminating null byte if there is no more char to copy
 	bra.s	\NextChar
@@ -169,7 +169,7 @@ config::ParseConfigFile:
 	move.w	d2,d0					; argc
 	subq.l	#2,d0					; Counter to build the argv table: remove 1 for program name + 1 for counter
 	bmi.s	\NoArg					; Don't try to loop with counter < 0...
-	
+
 	;------------------------------------------------------------------------------------------
 	;	Write the argv table
 	;------------------------------------------------------------------------------------------
@@ -190,7 +190,7 @@ config::ParseConfigFile:
 	movea.l	a4,a1					; argv**
 	move.w	d2,d0					; argc
 	jsr	INIT_CMDLINE(fp)
-		
+
 	;------------------------------------------------------------------------------------------
 	;	Parse it and check return value
 	;------------------------------------------------------------------------------------------
@@ -201,7 +201,7 @@ config::ParseConfigFile:
 	pea	CLIFlags(pc)				; Switch table
 	pea	(fp)					; data*
 	pea	CMDLINE(fp)				; CMDLINE*
-	jsr	PARSE_CMDLINE(fp)	
+	jsr	PARSE_CMDLINE(fp)
 	bsr	cli::CheckParsingReturnValue
 
 	;------------------------------------------------------------------------------------------

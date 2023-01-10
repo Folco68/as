@@ -1,4 +1,4 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ;==================================================================================================
 ;
@@ -31,9 +31,9 @@ ROMC	macro
 ;
 ;==================================================================================================
 
+HTAB			equ	$09
 EOL			equ	$0D
 SPACE			equ	$20
-HTAB			equ	$09
 CONFIG_FILE_COMMENT	equ	'#'
 ASM_FILE_COMMENT	equ	';'
 EOF			equ	0

@@ -1,4 +1,4 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ;==================================================================================================
 ;	Export macro
@@ -7,7 +7,7 @@
 pdtlib_export	macro
 pdtlib::\2	equ	pdtlib@\1
 PDTLIB_\3	equ	$\1
-	endm
+		endm
 
 ;==================================================================================================
 ;	Library exports
@@ -41,8 +41,8 @@ PDTLIB_\3	equ	$\1
 PDTLIB_CMDLINE.SIZEOF		equ	8
 
 ; Return values of CLI callbacks
-PDTLIB_CONTINUE_PARSING		equ	0	; Warning: hardcoded value in source!
-PDTLIB_STOP_PARSING		equ	1	; Warning: hardcoded value in source!
+PDTLIB_CONTINUE_PARSING		equ	0	; Warning: value hardcoded in source! (SR flags, value must be 0)
+PDTLIB_STOP_PARSING		equ	1	; Warning: value hardcoded in source! (value must be 1)
 
 ; Return values of ParseCmdline
 PDTLIB_END_OF_PARSING		equ	0

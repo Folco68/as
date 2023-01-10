@@ -18,8 +18,8 @@ Syntax
 
 Labels may contain: ^[A-Za-z_:\@][A-Za-z0-9_:\@]*
 Labels must start at the beginning of a line, with anything else than a figure.
-Trailing ':' are ignored and useless.
-Labels containing only ':' are valid but not addressable.
+Trailing ':' are ignored and useless. All others are significant.
+Labels containing only ':' are valid but not addressable (it's stupid, but it mimics A68k).
 There is no reserved names.
 Length is arbitrary.
 
@@ -30,7 +30,7 @@ Scope
 Labels not beginning with '\' are global. They are visible in all the source (even from the files included in the source, or by the files including the source).
 Labels beginning with '\' are local. Their scope of visibility is restricted to the surrounding global labels.
 Labels beginning with '\\@' and defined in a macro are local to that macro.
-Nevertheless, the same label may be defined and used in the same scope than the macro without conflict.
+Nevertheless, the same label may be defined and used in the same scope than the macro without conflict (which means that macro labels have some kind of decoration)
 
 
 
@@ -44,5 +44,5 @@ Nevertheless, the same label may be defined and used in the same scope than the 
 EQU
 ===
 
-The symbol may be terminated with ':', but can't be used as a label. Nevertheless, it mustn't conflict with label names.
+The symbol may be terminated with ':', but can't be used as a label. Nevertheless, it mustn't conflict with label names (same namespace).
 (more tests to do)

@@ -1,4 +1,4 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ;==================================================================================================
 ;
@@ -19,11 +19,11 @@ asmhd::AllocAssemblyHandles:
 	bsr.s	asmhd::FreeAssemblyHandles			; First, clear handles
 
 	lea	FILE_LIST_HD(fp),a0				; File list
-	moveq.l	#FILE.sizeof,d1
+	moveq	#FILE.sizeof,d1
 	bsr.s	AllocAssemblyHandle
 
 	lea	SYMBOL_LIST_HD(fp),a0				; Symbol list
-	moveq.l	#SYMBOL.sizeof,d1
+	moveq	#SYMBOL.sizeof,d1
 ;	bsr.s	AllocAssemblyHandle
 
 
@@ -43,7 +43,7 @@ asmhd::AllocAssemblyHandles:
 
 AllocAssemblyHandle:
 
-	moveq.l	#6,d0						; Minimum size of a handle
+	moveq	#6,d0						; Minimum size of a handle
 	bsr	mem::Alloc
 	move.w	d0,(a0)						; Save it
 	movea.w	d0,a0						; Read it
@@ -161,7 +161,7 @@ asmhd::GetLastEntryPtr
 ;	asmhd::RemoveLastEntry
 ;
 ;	Remove the last entry of an assembly handle pointed to by a1.
-;	The handle may contain at least one element
+;	The handle must contain at least one element
 ;
 ;	input	a1	HANDLE*
 ;

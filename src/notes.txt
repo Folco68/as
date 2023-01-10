@@ -1,8 +1,0 @@
-Memory management
------------------
-
-
-
-Build process
--------------
-

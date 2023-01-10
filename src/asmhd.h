@@ -1,4 +1,4 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ;==================================================================================================
 ;
@@ -16,7 +16,11 @@ ASSEMBLY_HD.sizeof	equ	4	;	Size of the assembly handle header
 ;	FILE
 ;
 ;	Structure stored in FILE_LIST_HD
-;	Describe a file which may be a base file, an included file, a macro file or an argument of macro
+;	Describe a file which may be:
+;	- a base file (found in CLI)
+;	- an included file
+;	- a macro file (virtual)
+;	- an argument of macro file (virtual)
 ;
 ;==================================================================================================
 
@@ -31,7 +35,6 @@ FILE_TYPE_BASE		equ	0	; File found in the command line
 FILE_TYPE_INCLUDED	equ	1	; File found in an include directive
 FILE_TYPE_MACRO		equ	2	; Temporary file used during macro parsing
 FILE_TYPE_MACRO_PARAM	equ	3	; Temporary file used during macro parameters parsing
-
 
 ;==================================================================================================
 ;

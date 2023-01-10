@@ -1,19 +1,19 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ;==================================================================================================
 ;
 ;	assembly::AssembleFileFromCLI
 ;
-;	Assemble a file found in CLI, after these local flags have been parsed
+;	Assemble a file found in CLI, after its local flags have been parsed
 ;	Don't return in case of an error, throw it
 ;
 ;	Algo:
-;	if (there is already a source in hold) {
-;		parse it;
-;	}
-;	put the current source in hold;
-;	reset local flags with global flags value;
-;	return to parse its local flags;
+;		if (there is already a source in hold) {
+;			parse it;
+;		}
+;		put the current source in hold;
+;		reset local flags with global flags value;
+;		return to parse its local flags;
 ;
 ;	input	a0	frame pointer
 ;
@@ -29,7 +29,7 @@ assembly::AssembleFileFromCLI:
 	movea.l	a0,fp						; And set frame pointer
 
 	;------------------------------------------------------------------------------------------
-	;	Assemble the file in hold id there is one
+	;	Assemble the file in hold if there is one
 	;------------------------------------------------------------------------------------------
 
 	move.l	CURRENT_SRC_FILENAME_PTR(fp),d0			; Is there a source in hold ?
@@ -54,7 +54,7 @@ assembly::AssembleFileFromCLI:
 	move.l	a0,FLAGS_PTR(fp)				; (this setting is usefull only when the first source is found, because it won't change anymore)
 	move.l	GLOBAL_FLAGS(fp),LOCAL_FLAGS(fp)		; Reset local flags
 	movea.l	(sp)+,a6					; Restore a6
-	moveq.l	#PDTLIB_CONTINUE_PARSING,d0			; Return value for Pdtlib
+	moveq	#PDTLIB_CONTINUE_PARSING,d0			; Return value for Pdtlib
 	rts
 
 
@@ -151,14 +151,16 @@ assembly::AssembleBaseFile:
 ;	d3	file handle
 ;	d4	file type
 ;	d5	offset of the reader mark in the file
-;	d6	offset of the beginning of the current line
+;	d6	offset of the beginning of the current line (used for print::PrintToStderr)
 ;	d7	line number
+;	a2	point to the file entry in the Assembly Handle
+;	a3	colon counter during parsing
 ;
 ;==================================================================================================
 
 AssembleCurrentFile:
 
-	movem.l	d3-d7/a2,-(sp)
+	movem.l	d3-d7/a2-a3,-(sp)
 
 	;------------------------------------------------------------------------------------------
 	;	Read data of current file
@@ -167,7 +169,7 @@ AssembleCurrentFile:
 	bsr	assembly::SetFileData
 
 	;------------------------------------------------------------------------------------------
-	;	Main loop of the assembly process. Parse one line per cycle
+	;	Main loop of the assembly process. Parse one line per loop
 	;------------------------------------------------------------------------------------------
 
 \MainLoop:
@@ -209,7 +211,7 @@ AssembleCurrentFile:
 	;
 	;	A symbol looks like ^[A-Za-z_:\@][A-Za-z0-9_:\@]*
 	;	See specs.txt to know how a symbol is defined
-	;	If it's not a valid symbol, parsing terminates with an error
+	;	If it's not a valid symbol, the parser terminates with an error
 	;------------------------------------------------------------------------------------------
 
 	lea	StrSymbolFirstChar(pc),a1			; Chars allowed to be at the beginning of a symbol
@@ -217,29 +219,74 @@ AssembleCurrentFile:
 	tst.b	d1						; And check success
 	beq	ErrorInvalidSymbolName
 
-	lea	SYMBOL_LIST_HD(fp),a1
+	lea	SYMBOL_LIST_HD(fp),a1				; Else we add a new symbol to the tables
 	bsr	asmhd::AddEntryToAssemblyHandle
-	movea.l	a0,a2
-	move.w	d3,SYMBOL.Handle(a2)
+	movea.l	a0,a2						; a2 is the entry ptr
+	move.w	d3,SYMBOL.Handle(a2)				; Fill the fields
 	move.w	d5,SYMBOL.Offset(a2)
-	move.w	#1,SYMBOL.Length(a2)
+	clr.w	SYMBOL.Length(a2)
 	clr.w	SYMBOL.Checksum(a2)
-
-	movea.w	d3,a0
-	trap	#3
-	moveq.l	#0,d5						; Clear upper byte of lower word
-	move.b	0(a0,d5.l),d0
-	add.w	d5,SYMBOL.Checksum(a2)
-
+	
 	;------------------------------------------------------------------------------------------
-	;	Like specified, even if it's stupid, a label containing only ':' chars is valid,
-	;	but not addressable. (sp).w is false if chars different from ':' are found
+	;	Prepare symbol parsing. d0 contains the current char
+	;	Like specified for A68k (even if it's stupid) a label containing only ':' chars is valid,
+	;	but not addressable.
 	;------------------------------------------------------------------------------------------
 
-	moveq.l	#1,d2						; True
+	movea.w	d3,a0						; File handle
+	trap	#3						; Deref it
+	moveq	#0,d0						; Clear upper byte of lower word
+	suba.w	a3,a3						; Consecutive colon counter
+	move.b	0(a0,d5.l),d0					; Read the first char again
+	bra.s	\SymbolLoopEntry				; Entry point is in the middle of the loop
+
+	;------------------------------------------------------------------------------------------
+	;	Read the symbol
+	;	While the trailing colons are not taken in account, a3 stores the number of
+	;	consecutive colons. If another char appears after some colons, a3 is added to the
+	;	symbol length, then it's reset until another colon appears
+	;------------------------------------------------------------------------------------------
+
 \SymbolLoop:
+	move.b	0(a0,d5.l),d0					; Read a char
+	lea	StrSymbolOtherChars(pc),a1			; Prepare the list of valid chars
+	bsr	IsCharValid					; Check the char
+	tst.b	d1
+	beq.s	\EndOfSymbol					; This char is not part of the symbol
+\SymbolLoopEntry:						; The loop starts here with the first char
+		add.w	d0,SYMBOL.Checksum(a2)			; Update checksum
+		addq.l	#1,d5					; Advance to the next char
+		cmpi.b	#':',d0					; A colon is handled in a special way
+		beq.s	\Colon					; Symbol length is not modified if this is a colon, because terminal colons are discarded
+			move.w	a3,d0				; Else read the number of consecutive colon, because now they are significant
+			addq.w	#1,d0				; Add the current char
+			add.w	d0,SYMBOL.Length(a2)		; And update symbol length
+			suba.w	a3,a3				; Reset a3 for future colons
+			bra.s	\SymbolLoop
+\Colon:		addq.w	#1,a3
+		bra.s	\SymbolLoop	
+\EndOfSymbol:
 
+	;------------------------------------------------------------------------------------------
+	;	Discard the symbol if it contains only colons
+	;------------------------------------------------------------------------------------------
 
+	tst.w	SYMBOL.Length(a2)				; Is there something else than colons in the symbol?
+	bne.s	\SymbolIsAddressable				; Yes, so the symbol is addressable
+		lea	SYMBOL_LIST_HD(fp),a1			; If no, discard the symbol
+		bsr	asmhd::RemoveLastEntry
+\SymbolIsAddressable:
+
+	;------------------------------------------------------------------------------------------
+	;	After a symbol, we need SPACE, HTAB, EOL or EOF, else the symbol is invalid
+	;------------------------------------------------------------------------------------------
+
+	move.b	0(a0,d5.l),d0
+	beq	\EOF
+	IFEQU	HTAB,d0,\BlankSpace
+	IFEQU	SPACE,d0,\BlankSpace
+	IFEQU	EOL,d0,\SkipEndOfLine
+	bra	ErrorInvalidSymbolName
 
 	;------------------------------------------------------------------------------------------
 	;	4. Skip blank spaces, maybe after a symbol, or at the beginning of the line
@@ -275,7 +322,7 @@ AssembleCurrentFile:
 		bra.s	\SkipEOL				; And loop
 
 	;------------------------------------------------------------------------------------------
-	;	EOL found, skip char and loop to parse next line
+	;	EOL found, skip char and loop to parse the next line
 	;------------------------------------------------------------------------------------------
 
 \EOL:	addq.l	#1,d5						; Mark offset
@@ -290,17 +337,26 @@ AssembleCurrentFile:
 	;	- else return
 	;------------------------------------------------------------------------------------------
 
-\EOF:	;	TODO: consistency checks
+\EOF:	;	TODO: consistency checks (macros, parenthesis, etc, especially at the end of a base file)
+
+	;------------------------------------------------------------------------------------------
+	;	Remove file from list
+	;------------------------------------------------------------------------------------------
 
 	lea	FILE_LIST_HD(fp),a1				; Remove current file from list
 	bsr	asmhd::RemoveLastEntry
 
+	;------------------------------------------------------------------------------------------
+	;	Reload data of previous file if one exists
+	;------------------------------------------------------------------------------------------
+
 	movea.w	FILE_LIST_HD(fp),a0				; File list handle
 	trap	#3						; Deref it
 	tst.w	ASSEMBLY_HD.Count(a0)				; Remaining files?
+	movem.l	(sp)+,d3-d7/a2-a3
 	bne	assembly::SetFileData				; Yes, reload its data and return
-		movem.l	(sp)+,d3-d7/a2
-		rts
+
+	rts
 
 
 ;==================================================================================================
@@ -327,9 +383,9 @@ assembly::SetFileData:
 	bsr	asmhd::GetLastEntryPtr				; FILE*
 	move.w	FILE.Handle(a0),d3				; Handle
 	move.w	FILE.Type(a0),d4				; Type
-	moveq.l	#0,d5						; Clear upper part
+	moveq	#0,d5						; Clear upper part
 	move.w	FILE.Offset(a0),d5				; Current offset
-	moveq.l	#0,d6						; Clear upper part
+	moveq	#0,d6						; Clear upper part
 	move.w	FILE.LineStart(a0),d6				; Offset of the beginning of the line
 	move.w	FILE.LineNumber(a0),d7				; Line number
 	rts

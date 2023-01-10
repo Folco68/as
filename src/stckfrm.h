@@ -1,4 +1,4 @@
-; kate: indent-width 8; replace-tabs false; syntax Motorola 68k (VASM/Devpac); tab-width 8;
+; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
 
 ;==================================================================================================
 ;
@@ -30,7 +30,7 @@ CUSTOM_CONFIG_FILENAME_PTR	equ	114	; 4
 DEFAULT_CONFIG_FILENAME_BUFFER	equ	118	; 20
 GET_FILE_PTR			equ	138	; 6
 SWAPABLE_FILE_HD		equ	144	; 2
-;				equ	146	; 2	FREE
+;				equ	146	; 6	FREE
 CHECK_FILE_TYPE			equ	152	; 6
 REMOVE_CURRENT_ARG		equ	158	; 6
 CURRENT_SRC_FILENAME_PTR	equ	164	; 4
