@@ -12,3 +12,4 @@
 - write consistency checks at the end of a file parsing (macro refcount, etc)
 - use asmhd::AddEntryToAssemblyHandle in mem::AddToSwapableFileHd to avoid manual reallocation
 - NeedRAM() could return true if some data have been swapped in, it would allow fine-tuned swaping
+- Symbol: missing info: the offset in the binary must be recorded!
