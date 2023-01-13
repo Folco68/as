@@ -351,5 +351,5 @@ ErrorInvalidSymbolName:
 	include "asmhd.asm"				; Allocation/reallocation of handles used by the assembler parser
 	include "assembly.asm"				; Source parser and assembler engine
 	include "libs.asm"				; Contain only data for the PedroM's libc and Pdtlib, may be far from the executable code
-	include "opcodes.asm"				; Contain opcode description + macros
+	include "opcodes.asm"				; Contain instruction table + opcode description
 	include "strings.asm"				; All strings. WARNING: size may be odd
