@@ -1,0 +1,4 @@
+{
+  "name": "as"
+, "files": [ { "directory": ".", "filters": ["*.asm", "*.h", "*.txt", "build.sh", ".kateproject"], "recursive": 1 } ]
+}
