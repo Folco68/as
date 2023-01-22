@@ -18,6 +18,13 @@ asmhd::AllocAssemblyHandles:
 
 	bsr.s	asmhd::FreeAssemblyHandles			; First, clear handles
 
+	moveq.l	#BINARY_SIZE_INC,d0				; Read binary base size
+	move.l	d0,BINARY_SIZE(fp)				; Save it
+	clr.l	BINARY_OFFSET(fp)				; Initial offset
+	bsr	mem::Alloc					; Alloc the handle
+	move.w	d0,BINARY_HD(fp)				; And save it
+	beq	ErrorMemory
+	
 	lea	FILE_LIST_HD(fp),a0				; File list
 	moveq	#FILE.sizeof,d1
 	bsr.s	AllocAssemblyHandle
@@ -68,6 +75,9 @@ AllocAssemblyHandle:
 ;==================================================================================================
 
 asmhd::FreeAssemblyHandles:
+
+	lea	BINARY_HD(fp),a0
+	bsr.s	FreeAssemblyHandle
 
 	lea	FILE_LIST_HD(fp),a0
 	bsr.s	FreeAssemblyHandle

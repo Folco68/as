@@ -226,7 +226,9 @@ AssembleCurrentFile:
 	move.w	d5,SYMBOL.Offset(a2)
 	clr.w	SYMBOL.Length(a2)
 	clr.w	SYMBOL.Checksum(a2)
-	
+	move.l	BINARY_OFFSET(fp),d0
+	move.l	d0,SYMBOL.BinOffset(a2)
+
 	;------------------------------------------------------------------------------------------
 	;	Prepare symbol parsing. d0 contains the current char
 	;	Like specified for A68k (even if it's stupid) a label containing only ':' chars is valid,
@@ -264,7 +266,7 @@ AssembleCurrentFile:
 			suba.w	a3,a3				; Reset a3 for future colons
 			bra.s	\SymbolLoop
 \Colon:		addq.w	#1,a3
-		bra.s	\SymbolLoop	
+		bra.s	\SymbolLoop
 \EndOfSymbol:
 
 	;------------------------------------------------------------------------------------------
@@ -278,7 +280,7 @@ AssembleCurrentFile:
 \SymbolIsAddressable:
 
 	;------------------------------------------------------------------------------------------
-	;	After a symbol, we need SPACE, HTAB, EOL or EOF, else the symbol is invalid
+	;	After a symbol, we need SPACE, HTAB, EOL, EOF or a comment, else the symbol is invalid
 	;------------------------------------------------------------------------------------------
 
 	move.b	0(a0,d5.l),d0
@@ -286,6 +288,7 @@ AssembleCurrentFile:
 	IFEQU	HTAB,d0,\BlankSpace
 	IFEQU	SPACE,d0,\BlankSpace
 	IFEQU	EOL,d0,\SkipEndOfLine
+	IFEQU	ASM_FILE_COMMENT,d0,\SkipEndOfLine
 	bra	ErrorInvalidSymbolName
 
 	;------------------------------------------------------------------------------------------
@@ -306,9 +309,43 @@ AssembleCurrentFile:
 	;	- EOL/EOF/comment
 	;------------------------------------------------------------------------------------------
 
+	;------------------------------------------------------------------------------------------
+	;	An instruction.
+	;	We copy it at (sp), 7 bytes max + terminal 0 (needed for GetOpcodeOffset)
+	;------------------------------------------------------------------------------------------
+	
+	clr.l	-(sp)						; 8 bytes buffer, 0 terminated
+	clr.l	-(sp)
+
+	moveq.l	#7-1,d0						; Counter. Maximum length of an instruction (illegal)
+	movea.l	sp,a1						; Writer in the stack
+	adda.l	d5,a0						; First char of the instruction
+	
+\CopyInstruction:
+	move.b	(a0)+,d1					; Read a char
+	ori.b	#1<<5,d1					; Lower case
+	cmpi.b	#'a',d1						; Lower bound
+	bcs.s	\CopyInstructionEnd
+	cmpi.b	#'z',d1						; Upper bound
+	bhi.s	\CopyInstructionEnd
+	move.b	d1,(a1)+					; Write the char inside the stack	
+	dbra	d0,\CopyInstruction
+		bra.s	\InstructionNotFound			; End of the loop reached, end of symbol not found
+\CopyInstructionEnd:
+	bsr	GetOpcodeOffset
+	tst.w	d0
+	bmi.s	\InstructionNotFound
+
+	; Validate the instruction in the source, by updating the registers.
+	; It will allow the parser to read the size, operands etc...
+	nop
+
+
+\InstructionNotFound:
+	addq.l	#8,sp
 
 	;------------------------------------------------------------------------------------------
-	;	Skip the end of the line and loop
+	;	6. Skip the end of the line and loop
 	;------------------------------------------------------------------------------------------
 
 \SkipEndOfLine:
@@ -448,3 +485,70 @@ IsCharValid:
 	cmp.b	d0,d2		; Test with upper range limit
 	bcs.s	IsCharValid	; Not in this range
 \End:	rts
+
+
+;==================================================================================================
+;
+;	GetOpcodeOffset
+;
+;	Bbinary search (tail recursion)
+;
+;	input	4(sp)	Instruction in the source, null terminated. Must be <= 8 bits, including the terminal 0
+;
+;	output	d0.w	Offset of the opcode in the table. Negative value if the opcode doesn't exist
+;
+;	destroy	d0-d2/a0
+;
+;==================================================================================================
+
+GetOpcodeOffset:
+
+	movem.l	d3-d5/a2-a3,-(sp)
+	lea	InstructionTable(pc),a2		; Read table boundaries
+	lea	InstructionTableEnd(pc),a3
+	move.l	a3,d1
+	sub.l	a2,d1				; Size of the table
+	divu	#INSTRUCTION.sizeof,d1		; Element count
+	subq.w	#1,d1				; Offset of the last element
+	moveq	#0,d0				; Offset of the first element
+
+\Loop:	cmp.w	d0,d1				; Test terminal condition (lower bound > upper bound)
+	bcc.s	\NotEnd
+		moveq	#-1,d0			; The instruction does not exist
+		bra.s	\End
+\NotEnd:
+	move.w	d1,d2
+	add.w	d0,d2				; Lower + upper
+	lsr.w	#1,d2				; /2 = middle of the range
+	move.w	d2,d5				; Save it
+	mulu	#INSTRUCTION.sizeof,d2		; Offset of the middle instruction
+	lea	InstructionTable(pc,d2.w),a0	; Address of the middle instruction
+	movem.l	(a0)+,d3-d4			; Read instruction
+	cmp.l	20+4(sp),d3			; 4 first bytes
+	bcs.s	\IncreaseLower
+	bhi.s	\DecreaseUpper
+	cmp.l	20+4+4(sp),d4			; 4 last bytes
+	bcs.s	\IncreaseLower
+	bhi.s	\DecreaseUpper
+
+	;------------------------------------------------------------------------------------------
+	;	Found
+	;------------------------------------------------------------------------------------------
+
+		move.w	(a0),d0			; Read the opcode offset in the instruction table
+\End:		movem.l	(sp)+,d3-d5/a2-a3	; Restore regs
+		rts
+
+	;------------------------------------------------------------------------------------------
+	;	Adjust bounds
+	;------------------------------------------------------------------------------------------
+
+\IncreaseLower:
+	move.w	d5,d0				; Increase lower bound
+	addq.w	#1,d0				; And discard the current value
+	bra.s	\Loop
+
+\DecreaseUpper:
+	move.w	d5,d1				; Decrease upper bound
+	subq.w	#1,d1				; And discard the current value
+	bra.s	\Loop

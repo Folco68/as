@@ -138,6 +138,7 @@
 	move.l	a0,ROM_BASE(fp)				; Save it
 	clr.w	SWAPABLE_FILE_HD(fp)			; Handle containing the handles of the source files which can be swapped in
 	clr.w	SYMBOL_LIST_HD(fp)			; Handle containing the table of symbols found in the current source
+	clr.w	BINARY_HD(fp)				; Handle containing the binary code
 
 ;==================================================================================================
 ;

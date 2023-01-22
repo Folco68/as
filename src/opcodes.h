@@ -24,10 +24,14 @@
 ;==================================================================================================
 
 INSTRUCTION	macro
-	dc.b	\1	; Name (up to 7 bytes)
-	ds.b	\2	; Padding to 8 bytes
-	dc.w	\3	; Offset of the first possible opcode in the opcode table
+	dc.b	\1		; Name (up to 7 bytes)
+	ds.b	\2		; Padding to 8 bytes
+	dc.w	\3-OpcodeTable	; Offset of the first possible opcode in the opcode table
 	endm
+	
+INSTRUCTION.Name	equ	0
+INSTRUCTION.Offset	equ	8
+INSTRUCTION.sizeof	equ	10
 
 
 ;==================================================================================================
@@ -133,7 +137,6 @@ SRC_911			equ	1<<30	; Source coded on bits 9-11 instead of usual 0-2
 ;	An opcode is defined with a word, and completed by a 32 bits field contaning its properties
 ;
 ;==================================================================================================
-
 
 OPCODE		macro
 \1	dc.w	\2	; Opcode

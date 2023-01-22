@@ -50,7 +50,8 @@ SYMBOL.Offset		equ	2	; 2	Offset of the symbol, starting from the first byte of t
 SYMBOL.Length		equ	4	; 2	Number of characters of the symbol
 SYMBOL.Checksum		equ	6	; 2	Checksum of the symbol
 SYMBOL.Flags		equ	8	; 2	Type of symbol
-SYMBOL.sizeof		equ	10	; 	Size of the structure
+SYMBOL.BinOffset	equ	10	; 2	Offset of the symbol in the binary
+SYMBOL.sizeof		equ	12	; 	Size of the structure
 
 SYMBOL_FLAG_LABEL	equ	1
 SYMBOL_FLAG_LOCAL	equ	2
