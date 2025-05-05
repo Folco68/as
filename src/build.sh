@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Build version file
 echo "; This file is auto-generated" > version.h

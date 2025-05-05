@@ -1,5 +1,3 @@
-; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
-
 ;==================================================================================================
 ;	Export macro
 ;==================================================================================================
@@ -19,11 +17,12 @@ PDTLIB_\3	equ	$\1
 
 	; Command line
 	pdtlib_export	0001,InitCmdline,INIT_CMDLINE
-	pdtlib_export	0002,ResetCmdline,RESET_CMDLINE
+	pdtlib_export	0002,RewindCmdlineParser,REWIND_CMDLINE_PARSER
 	pdtlib_export	0003,GetNextArg,GET_NEXT_ARG
 	pdtlib_export	0004,GetCurrentArg,GET_CURRENT_ARG
 	pdtlib_export	0005,ParseCmdline,PARSE_CMDLINE
-	pdtlib_export	0009,RemoveCurrentArg,REMOVE_CURRENT_ARG
+	pdtlib_export	0009,DisableCurrentArg,DISABLE_CURRENT_ARG
+	pdtlib_export	000D,ResetCmdlineParser,RESET_CMDLINE_PARSER
 
 	; Files
 	pdtlib_export	0006,GetFilePtr,GET_FILE_PTR

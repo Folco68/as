@@ -23,7 +23,7 @@ asmhd::AllocAssemblyHandles:
 	clr.l	BINARY_OFFSET(fp)				; Initial offset
 	bsr	mem::Alloc					; Alloc the handle
 	move.w	d0,BINARY_HD(fp)				; And save it
-	beq	ErrorMemory
+	beq	ErrorMemory					; TODO: mem::Alloc doesn't throw its own error???
 	
 	lea	FILE_LIST_HD(fp),a0				; File list
 	moveq	#FILE.sizeof,d1

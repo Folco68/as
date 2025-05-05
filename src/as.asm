@@ -21,7 +21,7 @@
 	DEFINE	_main		; Program entry point
 	DEFINE	_flag_2		; Don't redraw screen
 	DEFINE	_flag_3		; Binary is read-only
-	
+
 
 ;==================================================================================================
 ;
