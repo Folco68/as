@@ -1,5 +1,3 @@
-; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
-
 	include "tios.h"
 	include "romcalls.h"
 	include "as.h"

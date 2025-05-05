@@ -1,5 +1,3 @@
-; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
-
 ;==================================================================================================
 ;
 ;	Default flag values. Change them to modify the default behaviour of as

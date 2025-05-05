@@ -1,5 +1,3 @@
-; kate: replace-tabs false; syntax M68k for Folco; tab-width 8;
-
 ;==================================================================================================
 ;
 ;	PedroM's custom header, allowing libc calls through LibsCall/LibsExec;
