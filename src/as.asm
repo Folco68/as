@@ -27,7 +27,7 @@
 ;
 ;==================================================================================================
 
-	cmpi.w	#PEDROM_SIGNATURE,OS_SIGNATURE		; We can't run on AMS (too many limitations)
+	cmpi.w	#PEDROM_SIGNATURE,OS_SIGNATURE		; We can't run on AMS (too many restrictions)
 	beq.s	\OSok
 \WrongOS:	pea	StrErrorWrongOS(pc)
 		ROMC	ST_helpMsg			; The libc is not loaded yet, we can't throw to stderr
@@ -156,6 +156,7 @@
 	move.w	ARGC(fp),d0
 	movea.l	ARGV(fp),a1
 	jsr	INIT_CMDLINE(fp)
+	jsr	DISABLE_CURRENT_ARG(fp)			; Don't parse *argv[0] (program name)
 	bsr	cli::ParseCommands
 
 	;------------------------------------------------------------------------------------------
@@ -169,7 +170,8 @@
 	;------------------------------------------------------------------------------------------
 
 	lea	CMDLINE(fp),a0
-	jsr	RESET_CMDLINE(fp)
+	jsr	REWIND_CMDLINE_PARSER(fp)
+	jsr	DISABLE_CURRENT_ARG(fp)
 	bsr	cli::ParseFiles
 
 ;==================================================================================================

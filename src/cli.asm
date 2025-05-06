@@ -83,7 +83,7 @@ cli::CheckParsingReturnValue:
 	cmpi.w	#PDTLIB_STOPPED_BY_CALLBACK,d1	; A callback stopped the parsing. It should never happen
 	beq	ErrorStoppedByCallback
 
-	bra	ErrorUnhandledPdtlibReturnValue	; Catchall: any other value is unknown
+	bra	ErrorUnhandledPdtlibReturnValue	; Catchall: any other value is unknown (Pdtlib internal bug)
 
 
 ;==================================================================================================
@@ -132,8 +132,8 @@ cli::ParseFiles:
 ;
 ;	These callbaks are called by Pdtlib while parsing the command line
 ;
-;	input	d0.b	sign. May be #'+' or #'-'
-;		a0	void*	 			Frame pointer
+;	input	d0.b	sign	May be #'+' or #'-'
+;		a0	void*	Frame pointer
 ;
 ;	output	d0.w	PDTLIB_CONTINUE_PARSING		Pdtlib must continue the parsing of the CLI
 ;			PDTLIB_STOP_PARSING		Pdtlib must stop the parsing of the CLI
@@ -162,7 +162,7 @@ DisplayVersion:
 	;	Remove command from cmdline and return
 	;------------------------------------------------------------------------------------------
 
-	bsr.s	RemoveCurrentArg		; Remove this command from the command line
+	bsr.s	DisableCurrentArg		; Remove this command from the command line
 	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
@@ -183,24 +183,23 @@ SetConfigFile:
 	movea.l	a0,fp
 
 	;------------------------------------------------------------------------------------------
-	;	Get the next argument if one exists
+	;	Disable the command and check that another argument exists 
 	;------------------------------------------------------------------------------------------
 
-	lea	CMDLINE(fp),a0			; CMDLINE*
+	bsr	DisableCurrentArg
+	lea	CMDLINE(fp),a0
 	jsr	GET_NEXT_ARG(fp)
 	move.l	a0,d0				; Is an arg available?
 	beq	ErrorNoArgForConfig		; No...
 		move.l	a0,CUSTOM_CONFIG_FILENAME_PTR(fp)
+		movea.l	fp,a0			; DisableCurrentArg needs fp in a0 too
 		movea.l	(sp)+,fp		; Restore fp
-		movea.l	fp,a0			; RemoveCurrentArg needs fp in a0 too
 
 	;------------------------------------------------------------------------------------------
 	;	Remove command + filename from cmdline and return
 	;------------------------------------------------------------------------------------------
 
-	bsr.s	RemoveCurrentArg		; Remove filename
-	movea.l	fp,a0				; Need fp in a0 once again
-	bsr.s	RemoveCurrentArg		; Remove command
+	bsr.s	DisableCurrentArg		; Remove filename
 	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
@@ -235,7 +234,7 @@ EnableSwap:
 	;	Remove command from cmdline and return
 	;------------------------------------------------------------------------------------------
 
-	bsr.s	RemoveCurrentArg		; Remove this command from the command line
+	bsr.s	DisableCurrentArg		; Remove this command from the command line
 	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
@@ -256,7 +255,7 @@ DisplayHelp:
 	;	Remove command from cmdline and return
 	;------------------------------------------------------------------------------------------
 
-	bsr.s	RemoveCurrentArg		; Remove this command from the command line
+	bsr.s	DisableCurrentArg		; Remove this command from the command line
 	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
@@ -275,16 +274,16 @@ DisplayFlags:
 	;	Remove command from cmdline and return
 	;------------------------------------------------------------------------------------------
 
-	bsr.s	RemoveCurrentArg		; Remove this command from the command line
+	bsr.s	DisableCurrentArg		; Remove this command from the command line
 	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
 	rts
 
 
 ;==================================================================================================
 ;
-;	RemoveCurrentArg
+;	DisableCurrentArg
 ;
-;	Remove the current argument from the argv structure. Adjust argc
+;	Disable the current argument from the argv structure
 ;
 ;	input	a0	frame pointer
 ;
@@ -294,11 +293,8 @@ DisplayFlags:
 ;
 ;==================================================================================================
 
-RemoveCurrentArg:
+DisableCurrentArg:
 
-	pea	(fp)
-	movea.l	a0,fp
-	lea	CMDLINE(fp),a0
-	jsr	REMOVE_CURRENT_ARG(fp)
-	movea.l	(sp)+,fp
-	rts
+	pea	DISABLE_CURRENT_ARG(a0)		; Push the trampoline ptr
+	lea	CMDLINE(a0),a0			; Prepare CMDLINE*
+	rts					; Call the trampoline
