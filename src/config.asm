@@ -103,7 +103,7 @@ config::ParseConfigFile:
 	suba.l	d0,sp					; Create a buffer to put the args parsed in the file
 	movea.l	sp,a2					; First byte of the buffer
 	addq.l	#4,a0					; Skip size + TIOS header
-	moveq	#1,d1					; argc. Initialized with 1 to emulate program name entry
+	moveq	#0,d1					; argc
 
 	;------------------------------------------------------------------------------------------
 	;	File parsing and copying
@@ -156,16 +156,15 @@ config::ParseConfigFile:
 	;------------------------------------------------------------------------------------------
 
 \EndOfParsing:
-	lea	1(sp),a2				; a2 = first significant byte of the buffer. One is skipped due to the above warning
+	lea	1(sp),a2				; a2 = first significant byte of the buffer. First one is skipped (warning above)
 	move.w	d1,d2					; d2 = argc
 	add.w	d1,d1					; d1 = argc * 4 = size of argv table
 	add.w	d1,d1
 	suba.l	d1,sp
 	movea.l	sp,a4					; a4 = argv**
-	lea	4(a4),a0				; argv[1]*: first arg
-
+	movea.l	a4,a0					; argv[0]
 	move.w	d2,d0					; argc
-	subq.l	#2,d0					; Counter to build the argv table: remove 1 for program name + 1 for counter
+	subq.l	#1,d0					; Counter to build the argv table	
 	bmi.s	\NoArg					; Don't try to loop with counter < 0...
 
 	;------------------------------------------------------------------------------------------

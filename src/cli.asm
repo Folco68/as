@@ -26,18 +26,21 @@ cli::ParseCommands:
 	pea	DisplayFlags(pc)
 	clr.l	-(sp)				; No callback called if an arg haven't a +/- sign
 	pea	CLICommands(pc)			; String table of commands
-	pea	(fp)				; (void*)data thrown to the callbacks
+	pea	(fp)				; (void*)data given to the callbacks
 	pea	CMDLINE(fp)			; CMDLINE*
 	jsr	PARSE_CMDLINE(fp)
 	lea	9*4(sp),sp			; Pop args
 
 	;------------------------------------------------------------------------------------------
-	;	Special handling of this error for the first pass:
-	;	we just ignore the unknown switches, they will be parsed during the second pass
+	;	Special handling of the SwitchNotFound error during the first pass:
+	;	we just ignore unknown switches, they will be parsed during the second pass
 	;------------------------------------------------------------------------------------------
 
 	cmpi.w	#PDTLIB_SWITCH_NOT_FOUND,d0
-	beq.s	cli::ParseCommands
+	bne.s	cli::CheckParsingReturnValue
+		lea	CMDLINE(fp),a0
+		jsr	DISABLE_CURRENT_ARG(fp)
+		bra.s	cli::ParseCommands
 
 	;------------------------------------------------------------------------------------------
 	;
