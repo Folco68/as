@@ -276,13 +276,13 @@ mem::Hd2FullName:
 
 ;==================================================================================================
 ;
-;	mem::AddToSwapableFileHd
+;	mem::AddToSwappableFileHd
 ;
 ;	When a file is found in the CLI, it is put in this handle if:
 ;	- swap is allowed
 ;	- the file is in RAM
 ;	No error if the file can't be swaped in
-;	Files of this list are swaped out on exit
+;	Files of this list are swaped out on exit (TODO)
 ;
 ;	input	a0	filename
 ;		a6	frame pointer
@@ -291,11 +291,13 @@ mem::Hd2FullName:
 ;
 ;	destroy	nothing
 ;
+;	TODO: Prevent to add twice the same file
+;
 ;==================================================================================================
 
-mem::AddToSwapableFileHd:
+mem::AddToSwappableFileHd:
 
-	movem.l	d0-d2/a0-a1,-(sp)
+	movem.l	d0-d3/a0-a1,-(sp)
 
 	;------------------------------------------------------------------------------------------
 	;	Check if swap is allowed
@@ -309,16 +311,17 @@ mem::AddToSwapableFileHd:
 	;	Check if the file is in RAM
 	;------------------------------------------------------------------------------------------
 
-	movea.l	3*4(sp),a0					; Read filename
+	movea.l	4*4(sp),a0					; Read filename
 	jsr	GET_FILE_PTR(fp)				; And get a ptr to its data
 	cmpa.l	ROM_BASE(fp),a0					; Compare with ROM base
 	bcc.s	\End						; Don't add the file if it is already in ROM
 
 	;------------------------------------------------------------------------------------------
 	;	Add the file handle to the list
+	;	Check if the handle already exists
 	;------------------------------------------------------------------------------------------
 
-	move.w	SWAPABLE_FILE_HD(fp),d0
+	move.w	SWAPPABLE_FILE_HD(fp),d0
 	bne.s	\Initialized
 
 		;----------------------------------------------------------------------------------
@@ -328,24 +331,40 @@ mem::AddToSwapableFileHd:
 		pea	6
 		ROMC	HeapAlloc
 		addq.l	#4,sp
-		move.w	d0,SWAPABLE_FILE_HD(fp)
+		move.w	d0,SWAPPABLE_FILE_HD(fp)
 \Memory:	beq	ErrorMemory
 			movea.w	d0,a0
 			trap	#3
 			clr.w	(a0)				; No file registered yet
 
 	;------------------------------------------------------------------------------------------
+	;	Check if the file handle already exists in the handle
+	;------------------------------------------------------------------------------------------
+	
+	movea.l	4*4(sp),a0
+	jsr	GET_FILE_HANDLE(fp)
+	move.w	d0,d3
+
+	movea.w	SWAPPABLE_FILE_HD(fp),a0
+	trap	#3
+	move.w	(a0)+,d0					; # entry
+	subq.w	#1,d0						; Counter
+\Loop:	cmp.w	(a0)+,d3
+	beq.s	\End
+
+
+	;------------------------------------------------------------------------------------------
 	;	Reallocate the handle
 	;------------------------------------------------------------------------------------------
 
 \Initialized:
-	movea.w	d0,a0						; Read handle
+	movea.w	SWAPPABLE_FILE_HD(fp),a0
 	trap	#3						; Deref it
 	moveq	#1,d1						; Clear upper word. 1 is the count for one new file
 	add.w	(a0),d1						; Add number of registered files
 	add.l	d1,d1						; Table of handles
 	addq.l	#2,d1						; Header size
-	move.l	d1,-(sp)					; Push new
+	move.l	d1,-(sp)					; Push new size
 	move.w	d0,-(sp)					; Push handle
 	ROMC	HeapRealloc					; Realloc it
 	addq.l	#6,sp						; Pop args
@@ -361,8 +380,7 @@ mem::AddToSwapableFileHd:
 	addq.w	#1,(a0)						; Update file count
 	move.w	(a0),d1						; Read count
 	add.w	d1,d1						; Table of handles
-	move.w	d0,0(a0,d1.w)					; Register new file
+	move.w	d3,0(a0,d1.w)					; Register new file
 
-
-\End:	movem.l	(sp)+,d0-d2/a0-a1
+\End:	movem.l	(sp)+,d0-d3/a0-a1
 	rts

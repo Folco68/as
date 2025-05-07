@@ -134,7 +134,7 @@
 	clr.w	FILE_LIST_HD(fp)			; Handle containing the list of the currently assembled files
 	RAMC	kernel_ROM_base				; Read ROM base ptr
 	move.l	a0,ROM_BASE(fp)				; Save it
-	clr.w	SWAPABLE_FILE_HD(fp)			; Handle containing the handles of the source files which can be swapped in
+	clr.w	SWAPPABLE_FILE_HD(fp)			; Handle containing the handles of the source files which can be swapped in
 	clr.w	SYMBOL_LIST_HD(fp)			; Handle containing the table of symbols found in the current source
 	clr.w	BINARY_HD(fp)				; Handle containing the binary code
 
@@ -186,7 +186,7 @@
 ExitError:
 
 	bsr	asmhd::FreeAssemblyHandles		; Clean handles used to assemble files
-	; TODO: SWAPABLE_FILE_HD should be freed? But how??
+	; TODO: SWAPPABLE_FILE_HD should be freed? But how??
 
 	;------------------------------------------------------------------------------------------
 	;	Display an exit message indicating the error code contained by d3.w

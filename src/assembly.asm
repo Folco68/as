@@ -87,10 +87,10 @@ assembly::AssembleBaseFile:
 	bne	ErrorFileNotFound				; Throw the same error for file not found/wrong file type
 
 	;------------------------------------------------------------------------------------------
-	;	Make the file swapable
+	;	Make the file swappable
 	;------------------------------------------------------------------------------------------
 
-	bsr	mem::AddToSwapableFileHd
+	bsr	mem::AddToSwappableFileHd
 
 	;------------------------------------------------------------------------------------------
 	;	Prepare handles needed for assembly
