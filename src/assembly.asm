@@ -39,7 +39,7 @@ assembly::AssembleFileFromCLI:
 	;	Replace the file in hold with the current one
 	;------------------------------------------------------------------------------------------
 
-	lea	CMDLINE(fp),a0					; Get current source filename
+	lea	CLI_CMDLINE(fp),a0				; Get current source filename
 	jsr	GET_CURRENT_ARG(fp)
 	move.l	a0,CURRENT_SRC_FILENAME_PTR(fp)			; And put it in hold
 
@@ -491,7 +491,7 @@ IsCharValid:
 ;
 ;	Bbinary search (tail recursion)
 ;
-;	input	4(sp)	Instruction in the source, null terminated. Must be <= 8 bits, including the terminal 0
+;	input	4(sp)	Instruction in the source, null terminated. Must be <= 8 bytes, including the terminal 0
 ;
 ;	output	d0.w	Offset of the opcode in the table. Negative value if the opcode doesn't exist
 ;
@@ -522,10 +522,10 @@ GetOpcodeOffset:
 	mulu	#INSTRUCTION.sizeof,d2		; Offset of the middle instruction
 	lea	InstructionTable(pc,d2.w),a0	; Address of the middle instruction
 	movem.l	(a0)+,d3-d4			; Read instruction
-	cmp.l	20+4(sp),d3			; 4 first bytes
+	cmp.l	20+4(sp),d3			; 4 first bytes. +20: resgisters
 	bcs.s	\IncreaseLower
 	bhi.s	\DecreaseUpper
-	cmp.l	20+4+4(sp),d4			; 4 last bytes
+	cmp.l	20+4+4(sp),d4			; 4 last bytes. +20: registers
 	bcs.s	\IncreaseLower
 	bhi.s	\DecreaseUpper
 

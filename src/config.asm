@@ -183,7 +183,8 @@ config::ParseConfigFile:
 	;	Prepare the "command line" parsing
 	;------------------------------------------------------------------------------------------
 
-	lea	CMDLINE(fp),a0
+	lea	CFG_CMDLINE(fp),a0
+	move.l	a0,CURRENT_CMDLINE(fp)
 	movea.l	a4,a1					; argv**
 	move.w	d2,d0					; argc
 	jsr	INIT_CMDLINE(fp)
@@ -197,7 +198,7 @@ config::ParseConfigFile:
 	pea	ErrorInvalidInConfigFile(pc)		; Error handler if an arg without +/- is found
 	pea	CLIFlags(pc)				; Switch table
 	pea	(fp)					; data*
-	pea	CMDLINE(fp)				; CMDLINE*
+	pea	CFG_CMDLINE(fp)				; CMDLINE*
 	jsr	PARSE_CMDLINE(fp)
 	bsr	cli::CheckParsingReturnValue
 

@@ -344,7 +344,6 @@ mem::AddToSwappableFileHd:
 	movea.l	4*4(sp),a0
 	jsr	GET_FILE_HANDLE(fp)
 	move.w	d0,d3
-
 	movea.w	SWAPPABLE_FILE_HD(fp),a0
 	trap	#3
 	move.w	(a0)+,d0					; # entry

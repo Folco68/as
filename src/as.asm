@@ -140,11 +140,13 @@
 
 ;==================================================================================================
 ;
-;	Execution process and command line parsing
+;	Execution process and command line parsing.
 ;
-;	1. Parse the CLI, looking for commands, ignoring compilation flags and source files
-;	2. Read the config file, if there is one to parse
-;	3. Parse the remaining elements of the CLI
+;	CLI parsing is done in two passes.
+;	PASS 1: parse and execute commands, ignoring compilation flags and source files. Commands are disabled when executed
+;	PASS 2: parse global flags, then source files and their local flags. Commands are disabled so they are ignored
+;
+;	Between the two passes, the config file is opened, parsed and close (if one exists)
 ;
 ;==================================================================================================
 
@@ -152,7 +154,8 @@
 	;	First pass
 	;------------------------------------------------------------------------------------------
 
-	lea	CMDLINE(fp),a0
+	lea	CLI_CMDLINE(fp),a0
+	move.l	a0,CURRENT_CMDLINE(fp)
 	move.w	ARGC(fp),d0
 	movea.l	ARGV(fp),a1
 	jsr	INIT_CMDLINE(fp)
@@ -169,9 +172,9 @@
 	;	Second pass
 	;------------------------------------------------------------------------------------------
 
-	lea	CMDLINE(fp),a0
+	lea	CLI_CMDLINE(fp),a0
+	move.l	a0,CURRENT_CMDLINE(fp)
 	jsr	REWIND_CMDLINE_PARSER(fp)
-	jsr	DISABLE_CURRENT_ARG(fp)
 	bsr	cli::ParseFiles
 
 ;==================================================================================================
@@ -308,7 +311,7 @@ ErrorMemory:
 
 ErrorInvalidInConfigFile:
 	moveq	#ERROR_INVALID_ARG_IN_CONFIG_FILE,d3
-	lea	CMDLINE(fp),a0
+	lea	CFG_CMDLINE(fp),a0
 	jsr	GET_CURRENT_ARG(fp)
 	pea	(a0)
 	pea	StrErrorInvalidInConfigFile(pc)

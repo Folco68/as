@@ -27,7 +27,7 @@ cli::ParseCommands:
 	clr.l	-(sp)				; No callback called if an arg haven't a +/- sign
 	pea	CLICommands(pc)			; String table of commands
 	pea	(fp)				; (void*)data given to the callbacks
-	pea	CMDLINE(fp)			; CMDLINE*
+	pea	CLI_CMDLINE(fp)			; CMDLINE*
 	jsr	PARSE_CMDLINE(fp)
 	lea	9*4(sp),sp			; Pop args
 
@@ -38,7 +38,7 @@ cli::ParseCommands:
 
 	cmpi.w	#PDTLIB_SWITCH_NOT_FOUND,d0
 	bne.s	cli::CheckParsingReturnValue
-		lea	CMDLINE(fp),a0
+		lea	CLI_CMDLINE(fp),a0
 		jsr	DISABLE_CURRENT_ARG(fp)
 		bra.s	cli::ParseCommands
 
@@ -66,7 +66,7 @@ cli::CheckParsingReturnValue:
 	;------------------------------------------------------------------------------------------
 
 	move.w	d0,d1				; Save the pdtlib::ParseCmdline return value
-	lea	CMDLINE(fp),a0
+	movea.l	CURRENT_CMDLINE(fp),a0
 	jsr	GET_CURRENT_ARG(fp)
 	pea	(a0)
 
@@ -110,7 +110,7 @@ cli::ParseFiles:
 	pea	assembly::AssembleFileFromCLI(pc)
 	pea	CLIFlags(pc)
 	pea	(fp)
-	pea	CMDLINE(fp)
+	pea	CLI_CMDLINE(fp)
 	jsr	PARSE_CMDLINE(fp)
 	lea	6*4(sp),sp
 
@@ -190,7 +190,7 @@ SetConfigFile:
 	;------------------------------------------------------------------------------------------
 
 	bsr	DisableCurrentArg
-	lea	CMDLINE(fp),a0
+	lea	CLI_CMDLINE(fp),a0
 	jsr	GET_NEXT_ARG(fp)
 	move.l	a0,d0				; Is an arg available?
 	beq	ErrorNoArgForConfig		; No...
@@ -299,5 +299,5 @@ DisplayFlags:
 DisableCurrentArg:
 
 	pea	DISABLE_CURRENT_ARG(a0)		; Push the trampoline ptr
-	lea	CMDLINE(a0),a0			; Prepare CMDLINE*
+	lea	CLI_CMDLINE(a0),a0		; Prepare CMDLINE*
 	rts					; Call the trampoline

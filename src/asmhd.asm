@@ -21,7 +21,6 @@ asmhd::AllocAssemblyHandles:
 	clr.l	BINARY_OFFSET(fp)				; Initial offset
 	bsr	mem::Alloc					; Alloc the handle
 	move.w	d0,BINARY_HD(fp)				; And save it
-	beq	ErrorMemory					; TODO: mem::Alloc doesn't throw its own error???
 	
 	lea	FILE_LIST_HD(fp),a0				; File list
 	moveq	#FILE.sizeof,d1
@@ -39,6 +38,7 @@ asmhd::AllocAssemblyHandles:
 ;	Alloc a handle, and store it in the location pointed to by a0
 ;
 ;	input	a0	HANDLE*
+;		d1.w	Size of an entry
 ;
 ;	output	nothing
 ;
@@ -155,12 +155,12 @@ asmhd::GetLastEntryPtr
 	movea.w	(a1),a0						; Read handle
 	trap	#3						; Deref it
 	move.w	ASSEMBLY_HD.Count(a0),d0			; Read number of entries
-	bne.s	\Entry						; Ok, there is at least one
+	bne.s	\Get						; Ok, there is at least one
 		suba.l	a0,a0					; Else return NULL
 		rts
-\Entry:	subq.w	#1,d0
+\Get:	subq.w	#1,d0
 	mulu.w	ASSEMBLY_HD.Size(a0),d0
-	lea	ASSEMBLY_HD.sizeof(a0,d0.l),a0			; Pointer of the last entry
+	lea	ASSEMBLY_HD.sizeof(a0,d0.l),a0			; Pointer to the last entry
 	rts
 
 
@@ -184,11 +184,11 @@ asmhd::RemoveLastEntry:
 	movem.l	d0-d1/a0,-(sp)
 	movea.w	(a1),a0
 	trap	#3
-	subq.w	#1,ASSEMBLY_HD.Count(a0)
-	move.w	ASSEMBLY_HD.Count(a0),d0
-	mulu.w	ASSEMBLY_HD.Size(a0),d0
-	addq.l	#ASSEMBLY_HD.sizeof,d0
-	move.w	(a1),d1
+	subq.w	#1,ASSEMBLY_HD.Count(a0)	; Update counter
+	move.w	ASSEMBLY_HD.Count(a0),d0	; Entry count
+	mulu.w	ASSEMBLY_HD.Size(a0),d0		; Size of all entries
+	addq.l	#ASSEMBLY_HD.sizeof,d0		; Total size
+	move.w	(a1),d1				; Handle
 	bsr	mem::Realloc
 	movem.l	(sp)+,d0-d1/a0
 	rts
