@@ -76,7 +76,7 @@ config::ParseConfigFile:
 	;	- copy file content in a frame buffer
 	;	- put a null byte after each entry to emulate command line data format
 	;	- create the argv table, below the previous frame buffer
-	;	- create a CMDLINE structure below the argv table
+	;	- use a specific CMDLINE structure in the stack frame
 	;	- finally, call pdtlib::ParseCmdline
 	;
 	;==========================================================================================
@@ -161,7 +161,7 @@ config::ParseConfigFile:
 	add.w	d1,d1					; d1 = argc * 4 = size of argv table
 	add.w	d1,d1
 	suba.l	d1,sp
-	movea.l	sp,a4					; a4 = argv**
+	movea.l	sp,a4					; a4 = argv
 	movea.l	a4,a0					; argv[0]
 	move.w	d2,d0					; argc
 	subq.l	#1,d0					; Counter to build the argv table	
@@ -185,7 +185,7 @@ config::ParseConfigFile:
 
 	lea	CFG_CMDLINE(fp),a0
 	move.l	a0,CURRENT_CMDLINE(fp)
-	movea.l	a4,a1					; argv**
+	movea.l	a4,a1					; argv
 	move.w	d2,d0					; argc
 	jsr	INIT_CMDLINE(fp)
 
