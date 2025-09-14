@@ -1,0 +1,7 @@
+d3	file handle
+d4	file type
+d5	offset of the reader mark in the file
+d6	offset of the beginning of the current line (used for print::PrintToStderr)
+d7	line number
+a2	point to the file entry in the Assembly Handle
+a3	colon counter during symbol parsing

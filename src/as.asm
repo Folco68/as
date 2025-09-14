@@ -146,7 +146,7 @@
 ;	PASS 1: parse and execute commands, ignoring compilation flags and source files. Commands are disabled when executed
 ;	PASS 2: parse global flags, then source files and their local flags. Commands are disabled so they are ignored
 ;
-;	Between the two passes, the config file is opened, parsed and close (if one exists)
+;	Between the two passes, the config file is opened, parsed and closed (if one exists)
 ;
 ;==================================================================================================
 

@@ -152,11 +152,13 @@ assembly::AssembleBaseFile:
 ;	d6	offset of the beginning of the current line (used for print::PrintToStderr)
 ;	d7	line number
 ;	a2	point to the file entry in the Assembly Handle
-;	a3	colon counter during parsing
+;	a3	colon counter during symbol parsing
 ;
 ;==================================================================================================
 
 AssembleCurrentFile:
+
+	bra	*
 
 	movem.l	d3-d7/a2-a3,-(sp)
 
@@ -182,7 +184,7 @@ AssembleCurrentFile:
 	beq.s	\NoSkipFirstChar
 		addq.l	#1,d5					; This char is reserved by the OS
 \NoSkipFirstChar:
-	move.l	d5,d6						; Save line offset if case of error
+	move.l	d5,d6						; Save line beginning offset if case of error
 
 	;------------------------------------------------------------------------------------------
 	;	2. The line may begin with:
@@ -235,7 +237,7 @@ AssembleCurrentFile:
 
 	movea.w	d3,a0						; File handle
 	trap	#3						; Deref it
-	moveq	#0,d0						; Clear upper byte of lower word
+	moveq	#0,d0						; Clear upper byte of lower word (for checksum)
 	suba.w	a3,a3						; Consecutive colon counter
 	move.b	0(a0,d5.l),d0					; Read the first char again
 	bra.s	\SymbolLoopEntry				; Entry point is in the middle of the loop
@@ -489,7 +491,7 @@ IsCharValid:
 ;
 ;	GetOpcodeOffset
 ;
-;	Bbinary search (tail recursion)
+;	Binary search (tail recursion)
 ;
 ;	input	4(sp)	Instruction in the source, null terminated. Must be <= 8 bytes, including the terminal 0
 ;

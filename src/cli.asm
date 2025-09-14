@@ -24,12 +24,12 @@ cli::ParseCommands:
 	pea	EnableSwap(pc)
 	pea	DisplayHelp(pc)
 	pea	DisplayFlags(pc)
-	clr.l	-(sp)				; No callback called if an arg haven't a +/- sign
+	pea	StopParsing(pc)			; Commands are located before the first filename, stop parsing when finding one
 	pea	CLICommands(pc)			; String table of commands
-	pea	(fp)				; (void*)data given to the callbacks
+	pea	(fp)				; (void*)data passed to the callbacks
 	pea	CLI_CMDLINE(fp)			; CMDLINE*
+\ParseCommands:
 	jsr	PARSE_CMDLINE(fp)
-	lea	9*4(sp),sp			; Pop args
 
 	;------------------------------------------------------------------------------------------
 	;	Special handling of the SwitchNotFound error during the first pass:
@@ -39,33 +39,37 @@ cli::ParseCommands:
 	cmpi.w	#PDTLIB_SWITCH_NOT_FOUND,d0
 	bne.s	cli::CheckParsingReturnValue
 		lea	CLI_CMDLINE(fp),a0
-		jsr	DISABLE_CURRENT_ARG(fp)
-		bra.s	cli::ParseCommands
+		jsr	GET_NEXT_ARG(fp)
+		bra.s	\ParseCommands
 
 	;------------------------------------------------------------------------------------------
 	;
 	;	!!! WARNING !!!
-	;	This code is used to handle the return value of config file parsing,
-	;	and the return value of the second pass
+	;
+	;	This code is used to handle the return value of the first pass,
+	;	of the config file parsing, and of the second pass
 	;
 	;------------------------------------------------------------------------------------------
 
 cli::CheckParsingReturnValue:
+
+	lea	9*4(sp),sp			; Pop args of pdtlib::ParseCmdline
 
 	;------------------------------------------------------------------------------------------
 	;	Return if all was fine
 	;------------------------------------------------------------------------------------------
 
 	cmpi.w	#PDTLIB_END_OF_PARSING,d0
+	beq.s	\Success
+	cmpi.w	#PDTLIB_STOPPED_BY_CALLBACK,d0
 	bne.s	\Error
-		rts
-\Error:
+\Success:	rts
 
 	;------------------------------------------------------------------------------------------
 	;	Prepare the guilty switch for fprintf
 	;------------------------------------------------------------------------------------------
 
-	move.w	d0,d1				; Save the pdtlib::ParseCmdline return value
+\Error:	move.w	d0,d1				; Save the pdtlib::ParseCmdline return value
 	movea.l	CURRENT_CMDLINE(fp),a0
 	jsr	GET_CURRENT_ARG(fp)
 	pea	(a0)
@@ -82,9 +86,6 @@ cli::CheckParsingReturnValue:
 
 	cmpi.w	#PDTLIB_INVALID_RETURN_VALUE,d1	; Invalid return value. If it happens, a callback is buggy
 	beq	ErrorInvalidReturnValue
-
-	cmpi.w	#PDTLIB_STOPPED_BY_CALLBACK,d1	; A callback stopped the parsing. It should never happen
-	beq	ErrorStoppedByCallback
 
 	bra	ErrorUnhandledPdtlibReturnValue	; Catchall: any other value is unknown (Pdtlib internal bug)
 
@@ -147,6 +148,19 @@ cli::ParseFiles:
 
 ;==================================================================================================
 ;
+;	Stop parsing
+;
+;	While commands are located before the first filename, we stop the parsing when finding one
+;
+;==================================================================================================
+
+StopParsing:
+	moveq	#PDTLIB_STOP_PARSING,d0
+	rts
+
+
+;==================================================================================================
+;
 ;	Display the version/about of as
 ;
 ;==================================================================================================
@@ -160,14 +174,7 @@ DisplayVersion:
 	pea	StrVersion(pc)			; Version text
 	bsr	print::PrintToStdout		; Print it
 	addq.l	#4,sp				; Pop text
-
-	;------------------------------------------------------------------------------------------
-	;	Remove command from cmdline and return
-	;------------------------------------------------------------------------------------------
-
-	bsr.s	DisableCurrentArg		; Remove this command from the command line
-	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
-	rts
+	bra.s	DisableCurrentArg		; Remove command from cmdline and return
 
 
 ;==================================================================================================
@@ -192,19 +199,12 @@ SetConfigFile:
 	bsr	DisableCurrentArg
 	lea	CLI_CMDLINE(fp),a0
 	jsr	GET_NEXT_ARG(fp)
-	move.l	a0,d0				; Is an arg available?
-	beq	ErrorNoArgForConfig		; No...
+	move.l	a0,d0					; Is an arg available?
+	beq	ErrorNoArgForConfig			; No...
 		move.l	a0,CUSTOM_CONFIG_FILENAME_PTR(fp)
-		movea.l	fp,a0			; DisableCurrentArg needs fp in a0 too
-		movea.l	(sp)+,fp		; Restore fp
-
-	;------------------------------------------------------------------------------------------
-	;	Remove command + filename from cmdline and return
-	;------------------------------------------------------------------------------------------
-
-	bsr.s	DisableCurrentArg		; Remove filename
-	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
-	rts
+		movea.l	fp,a0				; DisableCurrentArg needs fp in a0 too
+		movea.l	(sp)+,fp			; Restore fp
+		bra.s	DisableCurrentArg		; Remove command from cmdline and return
 
 
 ;==================================================================================================
@@ -232,14 +232,7 @@ EnableSwap:
 		bsr	print::PrintToStdout
 		addq.l	#4,sp
 \NoWarning:
-
-	;------------------------------------------------------------------------------------------
-	;	Remove command from cmdline and return
-	;------------------------------------------------------------------------------------------
-
-	bsr.s	DisableCurrentArg		; Remove this command from the command line
-	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
-	rts
+	bra.s	DisableCurrentArg		; Remove command from cmdline and return
 
 
 ;==================================================================================================
@@ -253,14 +246,7 @@ DisplayHelp:
 	pea	StrHelp(pc)
 	bsr	print::PrintToStdout
 	addq.l	#4,sp
-
-	;------------------------------------------------------------------------------------------
-	;	Remove command from cmdline and return
-	;------------------------------------------------------------------------------------------
-
-	bsr.s	DisableCurrentArg		; Remove this command from the command line
-	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
-	rts
+	bra.s	DisableCurrentArg		; Remove command from cmdline and return
 
 
 ;==================================================================================================
@@ -272,25 +258,18 @@ DisplayHelp:
 DisplayFlags:
 
 	nop
-
-	;------------------------------------------------------------------------------------------
-	;	Remove command from cmdline and return
-	;------------------------------------------------------------------------------------------
-
-	bsr.s	DisableCurrentArg		; Remove this command from the command line
-	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Return value
-	rts
+;	bra.s	DisableCurrentArg		; Remove command from cmdline and return
 
 
 ;==================================================================================================
 ;
 ;	DisableCurrentArg
 ;
-;	Disable the current argument from the argv structure
+;	Disable the current argument from the argv structure and return to pdtlib::ParseCmdline
 ;
 ;	input	a0	frame pointer
 ;
-;	output	d0 = 0 if there is no arg to remove (end of command line reached)
+;	output	d0 = PDTLIB_CONTINUE_PARSING
 ;
 ;	destroy	d0/a0
 ;
@@ -298,6 +277,7 @@ DisplayFlags:
 
 DisableCurrentArg:
 
-	pea	DISABLE_CURRENT_ARG(a0)		; Push the trampoline ptr
-	lea	CLI_CMDLINE(a0),a0		; Prepare CMDLINE*
-	rts					; Call the trampoline
+	lea	CLI_CMDLINE(a0),a0		
+	jsr	DISABLE_CURRENT_ARG(a0)
+	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Commands return value
+	rts
