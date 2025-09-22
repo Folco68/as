@@ -43,7 +43,6 @@ StrErrorWrongOS:			dc.b	"as needs PedroM 0.83 or higher",0			; Boot failed
 StrErrorInvalidSwitch:			dc.b	"Invalid switch: %s",EOL,0				; Invalid switch found un the CLI
 StrErrorSwitchNotFound:			dc.b	"Switch not found: %s",EOL,0				; Switch not found in the CLI
 StrErrorInvalidReturnValue:		dc.b	"Invalid return value: %d",EOL,0			; A CLI callback returned an invalid value
-StrErrorStoppedByCallback:		dc.b	"The callback of %s stopped CLI parsing",EOL,0		; A callback switch requested CLI parsing to stop
 StrErrorUnhandledPdtlibReturnValue:	dc.b	"Unhandled value returned by Pdtlib: %i",EOL,0		; Pdtlib returned an unknown value
 StrErrorNoArgForConfig:			dc.b	"Switch 'config' needs a filename",EOL,0		; No argument for the --config switch
 StrErrorConfigFilenameNotFound:		dc.b	"Config file '%s' not found",EOL,0			; The specified config file couldn't be found

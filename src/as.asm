@@ -151,15 +151,25 @@
 ;==================================================================================================
 
 	;------------------------------------------------------------------------------------------
-	;	First pass
+	;	Init CMDLINE
 	;------------------------------------------------------------------------------------------
 
 	lea	CLI_CMDLINE(fp),a0
-	move.l	a0,CURRENT_CMDLINE(fp)
 	move.w	ARGC(fp),d0
 	movea.l	ARGV(fp),a1
 	jsr	INIT_CMDLINE(fp)
-	jsr	DISABLE_CURRENT_ARG(fp)			; Don't parse *argv[0] (program name)
+
+	;------------------------------------------------------------------------------------------
+	;	Save CMDLINE* and remove first arg (program name)
+	;------------------------------------------------------------------------------------------
+
+	move.l	a0,CURRENT_CMDLINE(fp)
+	jsr	DISABLE_CURRENT_ARG(fp)
+
+	;------------------------------------------------------------------------------------------
+	;	First pass
+	;------------------------------------------------------------------------------------------
+
 	bsr	cli::ParseCommands
 
 	;------------------------------------------------------------------------------------------
@@ -257,15 +267,6 @@ ErrorInvalidReturnValue:
 	moveq	#ERROR_INVALID_RETURN_VALUE,d3
 	move.w	d1,-(sp)				; Return value
 	pea	StrErrorInvalidReturnValue(pc)
-	bra.s	PrintError
-
-	;------------------------------------------------------------------------------------------
-	;	A callback stopped CLI parsing (should never happen)
-	;------------------------------------------------------------------------------------------
-
-ErrorStoppedByCallback:
-	moveq	#ERROR_STOPPED_BY_CALLBACK,d3
-	pea	StrErrorStoppedByCallback(pc)
 	bra.s	PrintError
 
 	;------------------------------------------------------------------------------------------

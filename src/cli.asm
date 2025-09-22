@@ -15,6 +15,7 @@
 
 cli::ParseCommands:
 
+
 	;------------------------------------------------------------------------------------------
 	;	Prepare the args
 	;------------------------------------------------------------------------------------------
@@ -37,10 +38,11 @@ cli::ParseCommands:
 	;------------------------------------------------------------------------------------------
 
 	cmpi.w	#PDTLIB_SWITCH_NOT_FOUND,d0
-	bne.s	cli::CheckParsingReturnValue
+	bne.s	\NoSNF
 		lea	CLI_CMDLINE(fp),a0
 		jsr	GET_NEXT_ARG(fp)
 		bra.s	\ParseCommands
+\NoSNF:	lea	9*4(sp),sp			; Pop args of pdtlib::ParseCmdline
 
 	;------------------------------------------------------------------------------------------
 	;
@@ -53,23 +55,20 @@ cli::ParseCommands:
 
 cli::CheckParsingReturnValue:
 
-	lea	9*4(sp),sp			; Pop args of pdtlib::ParseCmdline
-
 	;------------------------------------------------------------------------------------------
 	;	Return if all was fine
 	;------------------------------------------------------------------------------------------
 
 	cmpi.w	#PDTLIB_END_OF_PARSING,d0
-	beq.s	\Success
+	beq.s	Rts
 	cmpi.w	#PDTLIB_STOPPED_BY_CALLBACK,d0
-	bne.s	\Error
-\Success:	rts
+	beq.s	Rts
 
 	;------------------------------------------------------------------------------------------
 	;	Prepare the guilty switch for fprintf
 	;------------------------------------------------------------------------------------------
 
-\Error:	move.w	d0,d1				; Save the pdtlib::ParseCmdline return value
+	move.w	d0,d1				; Save the pdtlib::ParseCmdline return value
 	movea.l	CURRENT_CMDLINE(fp),a0
 	jsr	GET_CURRENT_ARG(fp)
 	pea	(a0)
@@ -127,7 +126,7 @@ cli::ParseFiles:
 
 	move.l	CURRENT_SRC_FILENAME_PTR(fp),d0
 	bne	assembly::AssembleBaseFile
-	rts
+Rts:	rts
 
 
 ;==================================================================================================
@@ -170,7 +169,7 @@ DisplayVersion:
 	;------------------------------------------------------------------------------------------
 	;	Print the help text
 	;------------------------------------------------------------------------------------------
-
+	
 	pea	StrVersion(pc)			; Version text
 	bsr	print::PrintToStdout		; Print it
 	addq.l	#4,sp				; Pop text
@@ -271,13 +270,14 @@ DisplayFlags:
 ;
 ;	output	d0 = PDTLIB_CONTINUE_PARSING
 ;
-;	destroy	d0/a0
+;	destroy	d0/a0-a1
 ;
 ;==================================================================================================
 
 DisableCurrentArg:
 
+	lea	DISABLE_CURRENT_ARG(a0),a1
 	lea	CLI_CMDLINE(a0),a0		
-	jsr	DISABLE_CURRENT_ARG(a0)
+	jsr	(a1)
 	moveq	#PDTLIB_CONTINUE_PARSING,d0	; Commands return value
 	rts
