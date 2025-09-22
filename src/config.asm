@@ -97,7 +97,7 @@ config::ParseConfigFile:
 
 	movea.l	a2,a0					; Filename
 	jsr	GET_FILE_PTR(fp)			; Get a ptr to data file
-	moveq	#1,d0					; Clear upper word, and set size at 1 byte, to even it after adding real size
+	moveq	#1,d0					; Clear upper word, and set size to 1 byte, to even it after adding real size
 	add.w	(a0),d0					; Add file size
 	andi.b	#$FE,d0					; Make it even
 	suba.l	d0,sp					; Create a buffer to put the args parsed in the file
