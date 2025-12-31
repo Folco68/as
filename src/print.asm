@@ -4,7 +4,8 @@
 ;
 ;	Print a formatted string on stdout, without destroying any register
 ;
-;	in	like printf
+;	in	stack	like printf
+;		fp	frame pointer
 ;
 ;	out	nothing
 ;
@@ -28,7 +29,8 @@ print::PrintToStdout:
 ;
 ;	Print a formatted string on stderr, without destroying any register
 ;
-;	in	like printf
+;	in	stack	like printf
+;		fp	frame pointer
 ;
 ;	out	nothing
 ;

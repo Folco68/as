@@ -132,7 +132,7 @@
 	clr.l	CUSTOM_CONFIG_FILENAME_PTR(fp)		; Default: no custom config file
 	clr.l	CURRENT_SRC_FILENAME_PTR(fp)		; Default: no source to assemble
 	clr.w	FILE_LIST_HD(fp)			; Handle containing the list of the currently assembled files
-	RAMC	kernel_ROM_base				; Read ROM base ptr
+	RAMC	kernel_ROM_base				; ROM base ptr, used for swap operations
 	move.l	a0,ROM_BASE(fp)				; Save it
 	clr.w	SWAPPABLE_FILE_HD(fp)			; Handle containing the handles of the source files which can be swapped in
 	clr.w	SYMBOL_LIST_HD(fp)			; Handle containing the table of symbols found in the current source

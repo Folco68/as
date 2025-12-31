@@ -111,7 +111,6 @@ cli::ParseFiles:
 	pea	CLIFlags(pc)
 	pea	(fp)
 	pea	CLI_CMDLINE(fp)
-	move.l	(sp),CURRENT_CMDLINE(fp)
 	jsr	PARSE_CMDLINE(fp)
 	lea	6*4(sp),sp
 

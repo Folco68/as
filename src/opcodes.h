@@ -76,7 +76,7 @@ DEST_IND_X		equ	1<<15	; (an),x(an),x(an,yn),x16,x32
 DEST_PC			equ	1<<16	; x(pc),x(pc,yn)
 DEST_SR			equ	1<<17	; SR		|			
 DEST_CCR		equ	2<<17	; CCR		|
-DEST_USP		equ	3<<17	; move	an,USP	|
+DEST_USP		equ	3<<17	; move an,USP	|
 DEST_REG_LIST		equ	4<<17	; dx-dx'/ay-ay'	| All these address methods are exclusive, so they can be compacted in 3 bits
 DEST_DISP_BW		equ	5<<17	; bcc/bsr/bra	|
 DEST_DISP_W		equ	6<<17	; dbcc		|
