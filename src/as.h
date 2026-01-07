@@ -35,7 +35,7 @@ CONFIG_FILE_COMMENT	equ	'#'
 ASM_FILE_COMMENT	equ	';'
 EOF			equ	0
 
-IFEQU	macro					; Parameters: value, register, label
+IFEQU	macro						; Parameters: value, register, label
 	ifeq	\1
 		tst.b	\2
 	endif

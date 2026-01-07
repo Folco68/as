@@ -242,7 +242,7 @@ mem::Hd2FullName:
 			bra.s	\Fail
 
 	;------------------------------------------------------------------------------------------
-	;	SYM_ENTRY found. Retrieve the name of the containing filder
+	;	SYM_ENTRY found. Retrieve the name of the containing folder
 	;------------------------------------------------------------------------------------------
 
 \Found:	pea	(a0)					; Save SYM_ENTRY* of the handle

@@ -233,7 +233,7 @@ OpcodeTable:
 	
 	OPCODE		OpcodeCmpi,$0C00,SRC_IMM+DEST_DN+DEST_MEM+SIZE_BWL67+PERMISSIVE_FALLBACK	; cmpi.bwl	#imm,<ea>
 
-	OPCODE		OpcodeCmpm,$B108,SRC_AN_INC+DEST_AN_INC+SIZE_BWL67				; cmpm.blw	(ax)+,(ay)+
+	OPCODE		OpcodeCmpm,$B108,SRC_AN_INC+DEST_AN_INC+SIZE_BWL67				; cmpm.bwl	(ax)+,(ay)+
 	
 	OPCODE		OpcodeDbcc,$54C8,SRC_DN+DEST_DISP_W+SIZE_W					; dbcc(.w)	dn,<label>
 	

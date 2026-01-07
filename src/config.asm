@@ -160,7 +160,7 @@ config::ParseConfigFile:
 	move.w	d1,d2					; d2 = argc
 	add.w	d1,d1					; d1 = argc * 4 = size of argv table
 	add.w	d1,d1
-	suba.l	d1,sp
+	suba.l	d1,sp					; Create argv frame buffer
 	movea.l	sp,a4					; a4 = argv
 	movea.l	a4,a0					; argv[0]
 	move.w	d2,d0					; argc

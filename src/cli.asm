@@ -3,7 +3,7 @@
 ;	ParseCommands
 ;
 ;	Parse the CLI, looking only for commands
-;	Unknows entries are ignored, without reporting an error
+;	Unknown entries are probably global flags, so they are ignored
 ;
 ;	input	nothing
 ;
